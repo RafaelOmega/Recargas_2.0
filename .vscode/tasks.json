@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Qt Designer",
+      "command": "${workspaceFolder}/.venv/Scripts/pyside6-designer.exe",
+      "type": "shell",
+      "problemMatcher": []
+    }
+  ]
+}

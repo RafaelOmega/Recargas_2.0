@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Controle Fabrica",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "internalConsole",
+            "env": {
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "QT_QPA_PLATFORM": "windows"
+            },
+            "justMyCode": true,
+            "stopOnEntry": false,
+            "subProcess": false
+        }
+    ]
+}
