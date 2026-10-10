@@ -1,27 +1,32 @@
 # -*- coding: utf-8 -*-
-"""Repositório de colaboradores: acesso a dados (PostgreSQL via SQLAlchemy).
-
-Cada método abre e fecha a própria sessão (padrão do Recargas — mais
-resiliente que a conexão permanente do Fábrica).
-"""
-from sqlalchemy import func, select
-
-from app.database import get_session
+"""Repositório de colaboradores: acesso a dados (PostgreSQL)."""
+from app.database import get_connection
 from app.models.colaborador import Colaborador
 from app.utils.logger import get_logger
 
 logger = get_logger("colaborador_repository")
 
+# Colunas para INSERT/UPDATE (id é auto-gerado pelo banco)
+_COLUNAS = "codigo, nome, documento"
+
+# SELECT base
+_SELECT_BASE = "SELECT id, codigo, nome, documento FROM colaboradores"
+
 
 class ColaboradorRepository:
-    """CRUD de colaboradores."""
+
+    def __init__(self, conn=None):
+        self._conn = conn or get_connection()
 
     # ---------------- geração de código ----------------
 
     def proximo_codigo(self) -> str:
         """Gera o próximo código sequencial (ex.: '00001')."""
-        with get_session() as session:
-            maior = session.scalar(select(func.max(Colaborador.codigo)))
+        with self._conn:
+            with self._conn.cursor() as cur:
+                cur.execute("SELECT MAX(codigo) FROM colaboradores")
+                linha = cur.fetchone()
+        maior = linha[0] if linha else None
         try:
             numero = int(maior) if maior else 0
         except (TypeError, ValueError):
@@ -31,47 +36,74 @@ class ColaboradorRepository:
     # ---------------- operações ----------------
 
     def inserir(self, colaborador: Colaborador) -> Colaborador:
-        with get_session() as session:
-            session.add(colaborador)
-            session.commit()
-            session.refresh(colaborador)
+        with self._conn:
+            with self._conn.cursor() as cur:
+                cur.execute(
+                    f"INSERT INTO colaboradores ({_COLUNAS}) "
+                    "VALUES (%s, %s, %s) RETURNING id",
+                    (colaborador.codigo, colaborador.nome,
+                     colaborador.documento),
+                )
+                colaborador.id = cur.fetchone()[0]
         logger.info("Colaborador inserido: %s (id=%s)",
                     colaborador.codigo, colaborador.id)
         return colaborador
 
     def atualizar(self, colaborador: Colaborador) -> bool:
-        with get_session() as session:
-            registro = session.get(Colaborador, colaborador.id)
-            if registro is None:
-                return False
-            registro.nome = colaborador.nome
-            registro.documento = colaborador.documento
-            session.commit()
+        with self._conn:
+            with self._conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE colaboradores
+                       SET nome = %s, documento = %s
+                     WHERE codigo = %s
+                    """,
+                    (colaborador.nome, colaborador.documento,
+                     colaborador.codigo),
+                )
+                alterou = cur.rowcount > 0
         logger.info("Colaborador atualizado: %s", colaborador.codigo)
-        return True
+        return alterou
 
     def excluir(self, codigo: str) -> bool:
-        with get_session() as session:
-            registro = session.scalar(
-                select(Colaborador).where(Colaborador.codigo == codigo))
-            if registro is None:
-                return False
-            session.delete(registro)
-            session.commit()
+        with self._conn:
+            with self._conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM colaboradores WHERE codigo = %s", (codigo,))
+                excluiu = cur.rowcount > 0
         logger.info("Colaborador excluído: %s", codigo)
-        return True
+        return excluiu
 
     def buscar_por_codigo(self, codigo: str) -> Colaborador | None:
-        with get_session() as session:
-            return session.scalar(
-                select(Colaborador).where(Colaborador.codigo == codigo))
+        with self._conn:
+            with self._conn.cursor() as cur:
+                cur.execute(f"{_SELECT_BASE} WHERE codigo = %s", (codigo,))
+                linha = cur.fetchone()
+        return self._linha_para_colaborador(linha)
 
     def pesquisar(self, filtro: str = "") -> list[Colaborador]:
-        with get_session() as session:
-            termo = f"%{filtro}%"
-            return list(session.scalars(
-                select(Colaborador)
-                .where(Colaborador.codigo.ilike(termo)
-                       | Colaborador.nome.ilike(termo))
-                .order_by(Colaborador.codigo)
-            ).all())
+        termo = f"%{filtro}%"
+        with self._conn:
+            with self._conn.cursor() as cur:
+                cur.execute(
+                    f"""
+                    {_SELECT_BASE}
+                     WHERE codigo ILIKE %s OR nome ILIKE %s
+                     ORDER BY codigo
+                    """,
+                    (termo, termo),
+                )
+                linhas = cur.fetchall()
+        return [c for c in
+                (self._linha_para_colaborador(l) for l in linhas) if c]
+
+    @staticmethod
+    def _linha_para_colaborador(linha) -> Colaborador | None:
+        if not linha:
+            return None
+        return Colaborador(
+            id=linha[0],
+            codigo=linha[1],
+            nome=linha[2],
+            documento=linha[3] or "",
+        )

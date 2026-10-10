@@ -6,13 +6,19 @@ fica sempre desabilitado. Fluxo: "+" prepara um novo registro, "..."
 abre a pesquisa e carrega o registro selecionado. Salvar grava (novo
 ou existente), Editar habilita a edição, Limpar zera e Excluir remove.
 """
-from PySide6.QtWidgets import QMessageBox, QWidget
+from PySide6.QtWidgets import QDialog, QMessageBox, QWidget
 
+from app.controllers.pesquisa_colaborador_controller import (
+    PesquisaColaboradorController,
+)
 from app.services.colaborador_service import ColaboradorService
+from app.utils.erros import mensagem_erro
 from app.utils.logger import get_logger
 from app.views.ui_cad_colaboradores import Ui_Cad_Colaboradores
 
 logger = get_logger("cad_colaboradores")
+
+_MSG_DUPLICIDADE = "Já existe um colaborador com esse código."
 
 
 class CadColaboradoresController(QWidget):
@@ -44,7 +50,7 @@ class CadColaboradoresController(QWidget):
         self.ui.bt_Excluir.clicked.connect(self._ao_excluir)
 
     def _definir_tab_order(self):
-        """Ordem de tabulação: Nome -> CPF -> botões de ação.
+        """Ordem de tabulação: Nome -> Documento -> botões de ação.
 
         O txt_Codigo fica desabilitado (código automático) e não
         recebe foco, por isso não entra na cadeia.
@@ -66,28 +72,13 @@ class CadColaboradoresController(QWidget):
 
     def _ao_pesquisar(self):
         """Abre a tela de pesquisa e carrega o registro selecionado."""
-        from app.controllers.pesquisa_colaborador_controller import (
-            PesquisaColaboradorController,
-        )
-
-        dialogo = PesquisaColaboradorController(self)
-        if dialogo.exec() != dialogo.DialogCode.Accepted:
-            return
-
-        codigo = dialogo.codigo_selecionado
-        if not codigo:
-            return
-
-        registros = self._service.pesquisar(codigo)
-        registro = next(
-            (r for r in registros if r["codigo"] == codigo), None)
-        if registro is None:
-            QMessageBox.warning(
-                self, "Colaboradores",
-                f"Colaborador {codigo} não encontrado.")
-            return
-
-        self._carregar(registro)
+        dialog = PesquisaColaboradorController(self)
+        if (dialog.exec() == QDialog.DialogCode.Accepted
+                and dialog.codigo_selecionado):
+            registro = self._service.buscar_por_codigo(
+                dialog.codigo_selecionado)
+            if registro:
+                self._carregar(registro)
 
     def _ao_salvar(self):
         """Grava o registro: novo (inserir) ou carregado (atualizar)."""
@@ -108,7 +99,8 @@ class CadColaboradoresController(QWidget):
             logger.exception("Falha ao gravar colaborador")
             QMessageBox.critical(
                 self, "Colaboradores",
-                f"Falha ao gravar o colaborador:\n{exc}")
+                "Falha ao gravar o colaborador:\n"
+                + mensagem_erro(exc, duplicidade=_MSG_DUPLICIDADE))
             return
 
         self._carregar(gravado)
@@ -123,6 +115,7 @@ class CadColaboradoresController(QWidget):
                 "Nenhum registro carregado. Use o botão \"...\" para "
                 "localizar um colaborador.")
             return
+
         self.ui.txt_Nome.setEnabled(True)
         self.ui.txt_Documento.setEnabled(True)
         self.ui.txt_Nome.setFocus()
@@ -152,7 +145,7 @@ class CadColaboradoresController(QWidget):
             logger.exception("Falha ao excluir colaborador")
             QMessageBox.critical(
                 self, "Colaboradores",
-                f"Falha ao excluir o colaborador:\n{exc}")
+                "Falha ao excluir o colaborador:\n" + mensagem_erro(exc))
             return
 
         self._limpar_formulario()

@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
-from app.database.database import Base, get_engine, get_session
+from app.database.database import get_connection
 
-__all__ = ["Base", "get_engine", "get_session"]
+__all__ = ["get_connection"]

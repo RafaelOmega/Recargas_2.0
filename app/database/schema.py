@@ -1,20 +1,30 @@
 # -*- coding: utf-8 -*-
 """Criação do schema do banco (idempotente).
 
-Executada na inicialização do sistema: o create_all emite CREATE TABLE
-apenas para tabelas que ainda não existem; em banco já existente nada
-é alterado.
+Executada na inicialização do sistema: cada CREATE TABLE usa
+IF NOT EXISTS, então em banco já existente nada é alterado.
 """
-from app.database.database import Base, get_engine
+from app.database import get_connection
 from app.utils.logger import get_logger
 
-# Importa os modelos para que o Base.metadata conheça todas as tabelas
-from app.models import (Colaborador)  # noqa: F401
-
 logger = get_logger("schema")
+
+_TABELAS = (
+    """
+    CREATE TABLE IF NOT EXISTS colaboradores (
+        id        SERIAL PRIMARY KEY,
+        codigo    VARCHAR(20) UNIQUE NOT NULL,
+        nome      VARCHAR(120) NOT NULL,
+        documento VARCHAR(20) DEFAULT ''
+    )
+    """,
+)
 
 
 def criar_schema() -> None:
     """Cria as tabelas que não existirem (idempotente)."""
-    Base.metadata.create_all(get_engine())
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            for ddl in _TABELAS:
+                cur.execute(ddl)
     logger.info("Schema verificado")

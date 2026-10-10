@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 """Ponto de entrada do sistema Recargas."""
-import ctypes
 import sys
 
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from app.controllers.carregamento_controller import CarregamentoController
 from app.controllers.main_window_controller import MainWindowController
-from app.database import get_engine
+from app.database import get_connection
 from app.database.schema import criar_schema
+from app.utils.icons import aplicar_icone_aplicacao
 from app.utils.logger import get_logger, setup_logging
 from app.utils.theme import aplicar_tema
-from app.utils.icons import aplicar_icone_aplicacao
 
 logger = get_logger("main")
 
@@ -19,43 +18,26 @@ logger = get_logger("main")
 def _validar_conexao() -> bool:
     """Tenta conectar ao banco. Retorna True se conectou."""
     try:
-        engine = get_engine()
-        with engine.connect():
-            pass
-        logger.info("Conexão com o banco validada")
+        conn = get_connection()
+        conn.close()
         return True
     except Exception as exc:
-        logger.error("Falha ao conectar no banco: %s", exc)
+        logger.error("Falha ao conectar ao banco: %s", exc)
         return False
-
-
-def _definir_app_id() -> None:
-    """Define o AppUserModelID para o Windows usar o ícone correto
-    na barra de tarefas (em vez do ícone do python.exe)."""
-    try:
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-            "Omega.Recargas.2.0"
-        )
-    except Exception:
-        pass  # não é Windows ou falhou -> segue sem o ID
 
 
 def main() -> int:
     setup_logging()
-    logger.info("Iniciando Recargas...")
-
-    _definir_app_id()
+    logger.info("Iniciando sistema Recargas")
 
     app = QApplication(sys.argv)
-    app.setApplicationName("Recargas")
-    app.setOrganizationName("Recargas")
     aplicar_tema(app)
     aplicar_icone_aplicacao(app)
 
     # splash: aparece antes de qualquer passo bloqueante
     splash = CarregamentoController()
     splash.show()
-    splash.atualizar(10, "Abrindo Controle de Recargas e Abastecimento")
+    splash.atualizar(10, "Abrindo Controle de Recargas")
 
     splash.atualizar(30, "Conectando ao banco de dados...")
     if not _validar_conexao():
@@ -92,7 +74,6 @@ def main() -> int:
     splash.atualizar(100, "Pronto")
     janela.showMaximized()
     splash.close()
-
     logger.info("Aplicação iniciada")
     return app.exec()
 

@@ -1,20 +1,14 @@
 # -*- coding: utf-8 -*-
-"""Modelo ORM: colaboradores."""
-from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
-
-from app.database.database import Base
+"""Modelo de domínio Colaborador."""
+from dataclasses import asdict, dataclass
 
 
-class Colaborador(Base):
-    __tablename__ = "colaboradores"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    codigo: Mapped[str] = mapped_column(String(20), unique=True)
-    nome: Mapped[str] = mapped_column(String(120))
-    documento: Mapped[str] = mapped_column(String(20), default="")
-
-    # ---------------- conversão (padrão Produto do Fábrica) ----------------
+@dataclass
+class Colaborador:
+    codigo: str
+    nome: str
+    documento: str = ""
+    id: int | None = None
 
     @classmethod
     def from_dict(cls, dados: dict) -> "Colaborador":
@@ -23,13 +17,9 @@ class Colaborador(Base):
             codigo=str(dados.get("codigo", "")).strip(),
             nome=str(dados.get("nome", "")).strip(),
             documento=str(dados.get("documento", "") or "").strip(),
+            id=dados.get("id"),
         )
 
     def to_dict(self) -> dict:
         """Converte para dict pronto para as telas."""
-        return {
-            "id": self.id,
-            "codigo": self.codigo,
-            "nome": self.nome,
-            "documento": self.documento,
-        }
+        return asdict(self)
