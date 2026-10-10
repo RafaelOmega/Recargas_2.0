@@ -32,6 +32,7 @@ class PesquisaColaboradorController(QDialog):
 
         self._montar_tabela()
         self._conectar_botoes()
+        self._definir_tab_order()
         self.pesquisar("")  # lista tudo ao abrir
 
         logger.info("Pesquisa de colaboradores iniciada")
@@ -54,6 +55,11 @@ class PesquisaColaboradorController(QDialog):
     def _conectar_botoes(self):
         self.ui.bt_Pesquisa.clicked.connect(self._ao_pesquisar)
         self.ui.txt_Pesquisa.returnPressed.connect(self._ao_pesquisar)
+
+    def _definir_tab_order(self):
+        """Ordem de tabulação: campo de pesquisa -> Confirmar -> grade."""
+        self.setTabOrder(self.ui.txt_Pesquisa, self.ui.bt_Pesquisa)
+        self.setTabOrder(self.ui.bt_Pesquisa, self.ui.tb_Colaborador)
 
     # ---------------- eventos ----------------
 

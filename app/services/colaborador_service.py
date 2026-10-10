@@ -3,6 +3,8 @@
 
 Os controllers chamam estes métodos passando/recebendo dicts.
 Erros de negócio levantam ValueError com mensagem pronta para o usuário.
+O código do colaborador é gerado automaticamente (sequencial) — nunca
+digitado pelo usuário.
 """
 from app.models.colaborador import Colaborador
 from app.repositories.colaborador_repository import ColaboradorRepository
@@ -19,17 +21,10 @@ class ColaboradorService:
 
     # ---------------- regras de negócio ----------------
 
-    def _validar(self, dados: dict, ignorar_id: int | None = None) -> None:
-        codigo = str(dados.get("codigo", "")).strip()
+    def _validar(self, dados: dict) -> None:
         nome = str(dados.get("nome", "")).strip()
-        if not codigo:
-            raise ValueError("Informe o código do colaborador.")
         if not nome:
             raise ValueError("Informe o nome do colaborador.")
-
-        existente = self._repo.buscar_por_codigo(codigo)
-        if existente is not None and existente.id != ignorar_id:
-            raise ValueError("Já existe um colaborador com esse código.")
 
     def _para_dict(self, c: Colaborador) -> dict:
         return {
@@ -41,11 +36,15 @@ class ColaboradorService:
 
     # ---------------- operações ----------------
 
+    def proximo_codigo(self) -> str:
+        """Próximo código sequencial (para exibição no formulário)."""
+        return self._repo.proximo_codigo()
+
     def salvar(self, dados: dict) -> dict:
-        """Insere um novo colaborador e retorna os dados gravados."""
+        """Insere um novo colaborador; o código é gerado automaticamente."""
         self._validar(dados)
         colaborador = Colaborador(
-            codigo=str(dados["codigo"]).strip(),
+            codigo=self._repo.proximo_codigo(),
             nome=str(dados["nome"]).strip(),
             documento=str(dados.get("documento", "") or "").strip(),
         )
@@ -58,7 +57,7 @@ class ColaboradorService:
         existente = self._repo.buscar_por_codigo(codigo)
         if existente is None:
             raise ValueError("Colaborador não encontrado para atualizar.")
-        self._validar(dados, ignorar_id=existente.id)
+        self._validar(dados)
         existente.nome = str(dados["nome"]).strip()
         existente.documento = str(dados.get("documento", "") or "").strip()
         self._repo.atualizar(existente)

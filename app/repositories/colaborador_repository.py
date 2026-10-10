@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Repositório de colaboradores: acesso a dados (PostgreSQL via SQLAlchemy)."""
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.database import get_session
 from app.models.colaborador import Colaborador
@@ -11,6 +11,16 @@ logger = get_logger("colaborador_repository")
 
 class ColaboradorRepository:
     """CRUD de colaboradores. Cada método abre e fecha a própria sessão."""
+
+    def proximo_codigo(self) -> str:
+        """Gera o próximo código sequencial (ex.: '00001')."""
+        with get_session() as session:
+            maior = session.scalar(select(func.max(Colaborador.codigo)))
+        try:
+            numero = int(maior) if maior else 0
+        except (TypeError, ValueError):
+            numero = 0
+        return f"{numero + 1:05d}"
 
     def inserir(self, colaborador: Colaborador) -> Colaborador:
         with get_session() as session:

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """Controller do cadastro de colaboradores.
 
-Fluxo: código + botão "..." abre a pesquisa; ao selecionar um registro
-ele é carregado no formulário. "+" limpa o formulário para um novo
-registro. Salvar grava (novo ou existente), Editar habilita a edição
-do registro carregado, Limpar zera o formulário e Excluir remove.
+O código é gerado automaticamente pelo sistema (sequencial) — o campo
+fica sempre desabilitado. Fluxo: "+" prepara um novo registro, "..."
+abre a pesquisa e carrega o registro selecionado. Salvar grava (novo
+ou existente), Editar habilita a edição, Limpar zera e Excluir remove.
 """
 from PySide6.QtWidgets import QMessageBox, QWidget
 
@@ -28,6 +28,7 @@ class CadColaboradoresController(QWidget):
         self._codigo_carregado: str | None = None  # None = novo registro
 
         self._conectar_botoes()
+        self._definir_tab_order()
         self._limpar_formulario()
 
         logger.info("Cadastro de colaboradores iniciado")
@@ -42,13 +43,25 @@ class CadColaboradoresController(QWidget):
         self.ui.bt_Limpar.clicked.connect(self._limpar_formulario)
         self.ui.bt_Excluir.clicked.connect(self._ao_excluir)
 
+    def _definir_tab_order(self):
+        """Ordem de tabulação: Nome -> CPF -> botões de ação.
+
+        O txt_Codigo fica desabilitado (código automático) e não
+        recebe foco, por isso não entra na cadeia.
+        """
+        self.setTabOrder(self.ui.txt_Nome, self.ui.txt_Documento)
+        self.setTabOrder(self.ui.txt_Documento, self.ui.bt_Novo)
+        self.setTabOrder(self.ui.bt_Novo, self.ui.bt_Pesquisar_Colaborador)
+        self.setTabOrder(self.ui.bt_Pesquisar_Colaborador, self.ui.bt_Salvar)
+        self.setTabOrder(self.ui.bt_Salvar, self.ui.bt_Editar)
+        self.setTabOrder(self.ui.bt_Editar, self.ui.bt_Limpar)
+        self.setTabOrder(self.ui.bt_Limpar, self.ui.bt_Excluir)
+
     # ---------------- eventos ----------------
 
     def _ao_novo(self):
         """Prepara o formulário para um novo registro."""
-        self._codigo_carregado = None
         self._limpar_formulario()
-        self.ui.txt_Codigo.setEnabled(True)
         self.ui.txt_Nome.setFocus()
 
     def _ao_pesquisar(self):
@@ -79,7 +92,7 @@ class CadColaboradoresController(QWidget):
     def _ao_salvar(self):
         """Grava o registro: novo (inserir) ou carregado (atualizar)."""
         dados = {
-            "codigo": self.ui.txt_Codigo.text(),
+            "codigo": self._codigo_carregado or "",
             "nome": self.ui.txt_Nome.text(),
             "documento": self.ui.txt_Documento.text(),
         }
@@ -161,10 +174,14 @@ class CadColaboradoresController(QWidget):
     def _limpar_formulario(self):
         """Zera o formulário e volta ao modo novo registro."""
         self._codigo_carregado = None
-        self.ui.txt_Codigo.clear()
         self.ui.txt_Nome.clear()
         self.ui.txt_Documento.clear()
-        self.ui.txt_Codigo.setEnabled(True)
+        self.ui.txt_Codigo.setEnabled(False)
         self.ui.txt_Nome.setEnabled(True)
         self.ui.txt_Documento.setEnabled(True)
-        self.ui.txt_Codigo.setFocus()
+        # mostra o próximo código como prévia (o definitivo é gerado ao salvar)
+        try:
+            self.ui.txt_Codigo.setText(self._service.proximo_codigo())
+        except Exception:
+            self.ui.txt_Codigo.setText("")
+        self.ui.txt_Nome.setFocus()
