@@ -9,9 +9,7 @@ from app.database.database import Base, get_engine
 from app.utils.logger import get_logger
 
 # Importa os modelos para que o Base.metadata conheça todas as tabelas
-from app.models import (  # noqa: F401
-    Funcionarios
-)
+from app.models import (Colaborador)  # noqa: F401
 
 logger = get_logger("schema")
 

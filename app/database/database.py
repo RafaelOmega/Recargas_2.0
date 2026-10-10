@@ -47,7 +47,7 @@ def get_engine():
     if _engine is None:
         _engine = create_engine(_url_banco(), pool_pre_ping=True)
         _SessionLocal = sessionmaker(bind=_engine, expire_on_commit=False)
-        logger.info("Engine criada para o banco %s", os.getenv("DB_NAME"))
+        logger.info("Engine criada para o banco %s", os.getenv("DB_NAME5"))
     return _engine
 
 
