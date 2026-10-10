@@ -13,6 +13,9 @@ from datetime import datetime
 from PySide6.QtCore import QDate, QTime, QTimer
 from PySide6.QtWidgets import QLabel, QMainWindow, QVBoxLayout, QWidget
 
+from app.controllers.cad_colaboradores_controller import (
+    CadColaboradoresController,
+)
 from app.utils.logger import get_logger
 from app.views.ui_main_window import Ui_MainWindow
 
@@ -43,6 +46,9 @@ class MainWindowController(QMainWindow):
         self._iniciar_relogio()
 
         logger.info("Janela principal iniciada")
+
+        self._criadores["colaboradores"] = lambda pai: CadColaboradoresController(
+            pai)
 
     # ---------------- configuração ----------------
 
