@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Repositório de colaboradores: acesso a dados (PostgreSQL via SQLAlchemy)."""
+"""Repositório de colaboradores: acesso a dados (PostgreSQL via SQLAlchemy).
+
+Cada método abre e fecha a própria sessão (padrão do Recargas — mais
+resiliente que a conexão permanente do Fábrica).
+"""
 from sqlalchemy import func, select
 
 from app.database import get_session
@@ -10,7 +14,9 @@ logger = get_logger("colaborador_repository")
 
 
 class ColaboradorRepository:
-    """CRUD de colaboradores. Cada método abre e fecha a própria sessão."""
+    """CRUD de colaboradores."""
+
+    # ---------------- geração de código ----------------
 
     def proximo_codigo(self) -> str:
         """Gera o próximo código sequencial (ex.: '00001')."""
@@ -22,24 +28,22 @@ class ColaboradorRepository:
             numero = 0
         return f"{numero + 1:05d}"
 
+    # ---------------- operações ----------------
+
     def inserir(self, colaborador: Colaborador) -> Colaborador:
         with get_session() as session:
             session.add(colaborador)
             session.commit()
             session.refresh(colaborador)
-        logger.info("Colaborador inserido: %s", colaborador.codigo)
+        logger.info("Colaborador inserido: %s (id=%s)",
+                    colaborador.codigo, colaborador.id)
         return colaborador
 
     def atualizar(self, colaborador: Colaborador) -> bool:
         with get_session() as session:
             registro = session.get(Colaborador, colaborador.id)
             if registro is None:
-                registro = session.scalar(
-                    select(Colaborador).where(
-                        Colaborador.codigo == colaborador.codigo))
-            if registro is None:
                 return False
-            registro.codigo = colaborador.codigo
             registro.nome = colaborador.nome
             registro.documento = colaborador.documento
             session.commit()

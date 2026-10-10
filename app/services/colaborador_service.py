@@ -6,6 +6,8 @@ Erros de negócio levantam ValueError com mensagem pronta para o usuário.
 O código do colaborador é gerado automaticamente (sequencial) — nunca
 digitado pelo usuário.
 """
+from sqlalchemy.exc import IntegrityError
+
 from app.models.colaborador import Colaborador
 from app.repositories.colaborador_repository import ColaboradorRepository
 from app.utils.logger import get_logger
@@ -26,13 +28,11 @@ class ColaboradorService:
         if not nome:
             raise ValueError("Informe o nome do colaborador.")
 
-    def _para_dict(self, c: Colaborador) -> dict:
-        return {
-            "id": c.id,
-            "codigo": c.codigo,
-            "nome": c.nome,
-            "documento": c.documento or "",
-        }
+    # ---------------- conversão ----------------
+
+    @staticmethod
+    def _para_dict(c: Colaborador) -> dict:
+        return c.to_dict()
 
     # ---------------- operações ----------------
 
@@ -48,11 +48,19 @@ class ColaboradorService:
             nome=str(dados["nome"]).strip(),
             documento=str(dados.get("documento", "") or "").strip(),
         )
-        self._repo.inserir(colaborador)
-        return self._para_dict(colaborador)
+        try:
+            gravado = self._repo.inserir(colaborador)
+        except IntegrityError as exc:
+            # dois usuários salvaram ao mesmo tempo -> mesmo código gerado
+            logger.error("Código duplicado ao inserir colaborador: %s", exc)
+            raise ValueError(
+                "Não foi possível gerar um código livre. "
+                "Tente salvar novamente.")
+        logger.info("Colaborador salvo: %s", gravado.codigo)
+        return self._para_dict(gravado)
 
     def atualizar(self, dados: dict) -> dict:
-        """Atualiza o colaborador existente (localizado pelo código)."""
+        """Atualiza o colaborador carregado (buscado pelo código)."""
         codigo = str(dados.get("codigo", "")).strip()
         existente = self._repo.buscar_por_codigo(codigo)
         if existente is None:
@@ -60,7 +68,9 @@ class ColaboradorService:
         self._validar(dados)
         existente.nome = str(dados["nome"]).strip()
         existente.documento = str(dados.get("documento", "") or "").strip()
-        self._repo.atualizar(existente)
+        if not self._repo.atualizar(existente):
+            raise ValueError("Colaborador não encontrado para atualizar.")
+        logger.info("Colaborador atualizado: %s", existente.codigo)
         return self._para_dict(existente)
 
     def excluir(self, codigo: str) -> bool:
@@ -68,6 +78,11 @@ class ColaboradorService:
         if not self._repo.excluir(str(codigo).strip()):
             raise ValueError("Colaborador não encontrado para excluir.")
         return True
+
+    def buscar_por_codigo(self, codigo: str) -> dict | None:
+        """Busca um colaborador pelo código (ou None se não existir)."""
+        c = self._repo.buscar_por_codigo(str(codigo).strip())
+        return self._para_dict(c) if c is not None else None
 
     def pesquisar(self, filtro: str = "") -> list[dict]:
         """Busca colaboradores filtrando por código/nome."""
