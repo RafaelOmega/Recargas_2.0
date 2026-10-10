@@ -22,7 +22,7 @@ logger = get_logger("main_window")
 # Somente actions realmente adicionadas a um menu no Qt Designer.
 # Ao adicionar/renomear actions no Designer, ajuste apenas este dicionário.
 _TELAS = {
-    "funcionarios": ("actionCad_Funcionarios", "Funcionários"),
+    "colaboradores": ("actionCad_Colaboradores", "Colaboradores"),
 }
 
 
@@ -115,7 +115,7 @@ class MainWindowController(QMainWindow):
 
         # Placeholder até a tela ter seu próprio controller.
         # Exemplo de registro quando existir o controller real:
-        #   self._criadores["funcionarios"] = lambda pai: CadFuncionariosController(pai)
+        #   self._criadores["colaboradores"] = lambda pai: CadColaboradoresController(pai)
         widget = QWidget()
         layout = QVBoxLayout(widget)
         rotulo = QLabel(
