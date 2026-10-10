@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Controle Fabrica",
+            "name": "Controle de Recargas e Abastecimento",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
