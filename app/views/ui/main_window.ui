@@ -205,13 +205,13 @@
     <property name="title">
      <string>Cadastros</string>
     </property>
-    <addaction name="actionCad_Funcionarios"/>
+    <addaction name="actionCad_Colaboradores"/>
    </widget>
    <addaction name="menuCadastros"/>
   </widget>
-  <action name="actionCad_Funcionarios">
+  <action name="actionCad_Colaboradores">
    <property name="text">
-    <string>Funcionarios</string>
+    <string>Colaboradores</string>
    </property>
   </action>
   <action name="actionMotivo_Entrada">

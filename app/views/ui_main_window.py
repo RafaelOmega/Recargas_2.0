@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'main_windowKBKPpX.ui'
+## Form generated from reading UI file 'main_windowpVVdFn.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -31,8 +31,8 @@ class Ui_MainWindow(object):
         font.setPointSize(10)
         font.setBold(True)
         MainWindow.setFont(font)
-        self.actionCad_Funcionarios = QAction(MainWindow)
-        self.actionCad_Funcionarios.setObjectName(u"actionCad_Funcionarios")
+        self.actionCad_Colaboradores = QAction(MainWindow)
+        self.actionCad_Colaboradores.setObjectName(u"actionCad_Colaboradores")
         self.actionMotivo_Entrada = QAction(MainWindow)
         self.actionMotivo_Entrada.setObjectName(u"actionMotivo_Entrada")
         self.actionEntrada = QAction(MainWindow)
@@ -130,7 +130,7 @@ class Ui_MainWindow(object):
         MainWindow.setMenuBar(self.menubar)
 
         self.menubar.addAction(self.menuCadastros.menuAction())
-        self.menuCadastros.addAction(self.actionCad_Funcionarios)
+        self.menuCadastros.addAction(self.actionCad_Colaboradores)
 
         self.retranslateUi(MainWindow)
 
@@ -139,7 +139,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
-        self.actionCad_Funcionarios.setText(QCoreApplication.translate("MainWindow", u"Funcionarios", None))
+        self.actionCad_Colaboradores.setText(QCoreApplication.translate("MainWindow", u"Colaboradores", None))
         self.actionMotivo_Entrada.setText(QCoreApplication.translate("MainWindow", u"Motivo Entrada", None))
         self.actionEntrada.setText(QCoreApplication.translate("MainWindow", u"Entrada", None))
         self.actionFicha_Tecnica.setText(QCoreApplication.translate("MainWindow", u"Ficha T\u00e9cnica", None))
