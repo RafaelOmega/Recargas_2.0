@@ -23,8 +23,12 @@ _TABELAS = (
 
 def criar_schema() -> None:
     """Cria as tabelas que não existirem (idempotente)."""
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            for ddl in _TABELAS:
-                cur.execute(ddl)
+    conn = get_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                for ddl in _TABELAS:
+                    cur.execute(ddl)
+    finally:
+        conn.close()
     logger.info("Schema verificado")

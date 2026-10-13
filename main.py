@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Ponto de entrada do sistema Recargas."""
+import ctypes
 import sys
 
 from PySide6.QtWidgets import QApplication, QMessageBox
@@ -13,6 +14,17 @@ from app.utils.logger import get_logger, setup_logging
 from app.utils.theme import aplicar_tema
 
 logger = get_logger("main")
+
+
+def _definir_app_id():
+    """Define o AppUserModelID para o Windows usar o ícone correto
+    na barra de tarefas (em vez do ícone do python.exe)."""
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            "Omega.Recargas.2.0"
+        )
+    except Exception:
+        pass  # não é Windows ou falhou -> segue sem o ID
 
 
 def _validar_conexao() -> bool:
@@ -29,6 +41,8 @@ def _validar_conexao() -> bool:
 def main() -> int:
     setup_logging()
     logger.info("Iniciando sistema Recargas")
+
+    _definir_app_id()
 
     app = QApplication(sys.argv)
     aplicar_tema(app)
