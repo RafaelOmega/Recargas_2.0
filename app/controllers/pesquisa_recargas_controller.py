@@ -3,15 +3,20 @@
 
 Navegação (Tab) em modo Z: campo de pesquisa -> botão Confirmar
 -> grade de resultados. Ordenação padrão: coluna Sequência
-(ascendente, ordenação NUMÉRICA — 9 vem antes de 10).
+(DESCENDENTE — do maior para o menor, ordenação NUMÉRICA).
 
-A coluna Descrição exibe os ITENS da recarga em uma única linha
+A coluna Data é exibida em formato brasileiro (dd/mm/aaaa) e a
+coluna Descrição mostra os ITENS da recarga em uma única linha
 (nomes separados por vírgula); sem itens, mostra a descrição salva.
 
-Para a ordenação ser numérica, o valor real fica no EditRole do item
-(Sequência como int, Data como ISO YYYY-MM-DD) e o texto exibido no
-DisplayRole. O QStandardItemModel ordena pelo EditRole.
+Para a ordenação ser numérica/cronológica, o valor real fica no
+EditRole do item (Sequência como int, Data como ISO YYYY-MM-DD) e o
+texto exibido no DisplayRole. O sortRole do modelo é configurado
+para EditRole — vale para a ordenação padrão E para o clique no
+cabeçalho.
 """
+from datetime import date, datetime
+
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QDialog, QMessageBox
@@ -50,9 +55,11 @@ class PesquisaRecargasController(QDialog):
         self.ui.tb_Recargas.setModel(self._modelo)
         configurar_tabela(self.ui.tb_Recargas,
                           coluna_stretch=COLUNA_STRETCH, ordenavel=True)
-        # ordenação padrão: coluna Sequência, ascendente (numérica)
+        # ordenação (padrão e clique no cabeçalho) usa o EditRole
+        self._modelo.setSortRole(Qt.ItemDataRole.EditRole)
+        # ordenação padrão: coluna Sequência, descendente (numérica)
         self.ui.tb_Recargas.sortByColumn(
-            COLUNA_PADRAO, Qt.SortOrder.AscendingOrder)
+            COLUNA_PADRAO, Qt.SortOrder.DescendingOrder)
 
         self._timer_filtro = QTimer(self)
         self._timer_filtro.setSingleShot(True)
@@ -85,12 +92,25 @@ class PesquisaRecargasController(QDialog):
     def _item_ordenavel(texto: str, valor_ordenacao) -> QStandardItem:
         """Item que exibe texto mas ordena pelo valor informado.
 
-        O QStandardItemModel ordena pelo dado do EditRole; o texto
-        do DisplayRole permanece apenas para exibição.
+        O modelo usa sortRole = EditRole; o texto do DisplayRole
+        permanece apenas para exibição.
         """
         item = QStandardItem(texto)
         item.setData(valor_ordenacao, Qt.ItemDataRole.EditRole)
         return item
+
+    @staticmethod
+    def _para_data(valor) -> date:
+        """Aceita date, datetime ou texto (ISO ou brasileiro)."""
+        if isinstance(valor, datetime):
+            return valor.date()
+        if isinstance(valor, date):
+            return valor
+        texto = str(valor).strip()[:10]
+        try:
+            return date.fromisoformat(texto)
+        except ValueError:
+            return datetime.strptime(texto, "%d/%m/%Y").date()
 
     @staticmethod
     def _descricao_itens(recarga: Recarga) -> str:
@@ -111,19 +131,20 @@ class PesquisaRecargasController(QDialog):
 
         self._modelo.removeRows(0, self._modelo.rowCount())
         for recarga in registros:
+            data = self._para_data(recarga.data)
             self._modelo.appendRow([
                 # sequência como int no EditRole: ordenação numérica
                 self._item_ordenavel(str(recarga.sequencia),
                                      recarga.sequencia),
-                # data como ISO no EditRole: ordenação cronológica
+                # exibição dd/mm/aaaa; ISO no EditRole: ordem cronológica
                 self._item_ordenavel(
-                    recarga.data.strftime("%d/%m/%Y"),
-                    recarga.data.isoformat()),
+                    data.strftime("%d/%m/%Y"),
+                    data.isoformat()),
                 # itens em linha (nomes separados por vírgula)
                 QStandardItem(self._descricao_itens(recarga)),
             ])
-        # garante a ordenação padrão por Sequência a cada recarga da grade
-        self._modelo.sort(COLUNA_PADRAO, Qt.SortOrder.AscendingOrder)
+        # garante a ordenação padrão: Sequência, do maior para o menor
+        self._modelo.sort(COLUNA_PADRAO, Qt.SortOrder.DescendingOrder)
         ajustar_larguras(self.ui.tb_Recargas, coluna_stretch=COLUNA_STRETCH)
 
     def recarga_selecionada(self) -> Recarga | None:

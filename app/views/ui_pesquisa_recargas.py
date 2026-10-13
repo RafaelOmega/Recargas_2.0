@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'pesquisa_recargasEMRYKo.ui'
+## Form generated from reading UI file 'pesquisa_recargasKSgfCn.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -23,7 +23,7 @@ class Ui_Pesquisa_Recargas(object):
     def setupUi(self, Pesquisa_Recargas):
         if not Pesquisa_Recargas.objectName():
             Pesquisa_Recargas.setObjectName(u"Pesquisa_Recargas")
-        Pesquisa_Recargas.resize(771, 427)
+        Pesquisa_Recargas.resize(950, 430)
         font = QFont()
         font.setFamilies([u"Segoe UI Semibold"])
         font.setPointSize(10)
