@@ -35,6 +35,7 @@ from PySide6.QtGui import QKeySequence, QShortcut, QStandardItem
 from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import QMessageBox, QWidget
 
+from app.models.colaborador import Colaborador
 from app.utils.erros import mensagem_erro
 from app.utils.logger import get_logger
 from app.utils.table_utils import ajustar_larguras, configurar_tabela
@@ -414,6 +415,49 @@ class LancamentoRecargasController(QWidget):
             self.ui.cmb_Colaboradores.addItem(
                 f"{colaborador.codigo} - {colaborador.nome}", colaborador)
 
+    @staticmethod
+    def _so_digitos(texto: str) -> str:
+        return "".join(c for c in (texto or "") if c.isdigit())
+
+    def _indice_colaborador(self, nome: str, documento: str) -> int:
+        """Localiza o colaborador no combo por documento e nome.
+
+        1) documento igual (apenas dígitos, ignora formatação);
+        2) nome igual ignorando maiúsculas/minúsculas e espaços.
+        Snapshots antigos podem divergir do cadastro atual, então a
+        comparação nunca é textual estrita.
+        """
+        doc = self._so_digitos(documento)
+        nome_norm = " ".join(nome.split()).casefold()
+
+        if doc:
+            for i in range(self.ui.cmb_Colaboradores.count()):
+                col = self.ui.cmb_Colaboradores.itemData(i)
+                if col and self._so_digitos(col.documento) == doc:
+                    return i
+        for i in range(self.ui.cmb_Colaboradores.count()):
+            col = self.ui.cmb_Colaboradores.itemData(i)
+            if col and " ".join(col.nome.split()).casefold() == nome_norm:
+                return i
+        return -1
+
+    def _garantir_colaborador_snapshot(self, nome: str,
+                                       documento: str) -> int:
+        """Garante uma entrada no combo para um snapshot sem cadastro.
+
+        Itens importados/antigos podem referenciar colaboradores que
+        não estão (ou mudaram) no cadastro. Cria uma entrada temporária
+        com o snapshot para o duplo clique sempre carregar o item.
+        """
+        pos = self._indice_colaborador(nome, documento)
+        if pos >= 0:
+            return pos
+        snapshot = Colaborador(id=None, codigo="", nome=nome,
+                               documento=documento)
+        self.ui.cmb_Colaboradores.addItem(
+            f"{nome} (fora do cadastro)", snapshot)
+        return self.ui.cmb_Colaboradores.count() - 1
+
     def _confirmar_item(self):
         colaborador = self.ui.cmb_Colaboradores.currentData()
         if colaborador is None:
@@ -455,24 +499,14 @@ class LancamentoRecargasController(QWidget):
         linha = indice.row()
         nome = self._modelo.item(linha, 0).text()
         documento = self._modelo.item(linha, 1).text()
-        pos = self._indice_colaborador(nome, documento)
-        if pos >= 0:
-            self.ui.cmb_Colaboradores.setCurrentIndex(pos)
+        pos = self._garantir_colaborador_snapshot(nome, documento)
+        self.ui.cmb_Colaboradores.setCurrentIndex(pos)
         self.ui.txt_Carga.setText(self._modelo.item(linha, 2).text())
         self.ui.txt_Sem_Carga.setText(self._modelo.item(linha, 3).text())
         self.ui.dbs_Valor.setValue(
             self._valor_para_float(self._modelo.item(linha, 4).text()))
         self._item_em_edicao = linha
         self.ui.cmb_Colaboradores.setFocus()
-
-    def _indice_colaborador(self, nome: str, documento: str) -> int:
-        """Localiza o colaborador no combo por nome e documento."""
-        for i in range(self.ui.cmb_Colaboradores.count()):
-            col = self.ui.cmb_Colaboradores.itemData(i)
-            if (col and col.nome == nome
-                    and (col.documento or "") == documento):
-                return i
-        return -1
 
     def _excluir_item(self):
         indice = self.ui.tb_Itens.currentIndex()
