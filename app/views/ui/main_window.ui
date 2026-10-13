@@ -207,7 +207,14 @@
     </property>
     <addaction name="actionCad_Colaboradores"/>
    </widget>
+   <widget class="QMenu" name="menuLancamentos">
+    <property name="title">
+     <string>Lançamentos</string>
+    </property>
+    <addaction name="actionRecargas"/>
+   </widget>
    <addaction name="menuCadastros"/>
+   <addaction name="menuLancamentos"/>
   </widget>
   <action name="actionCad_Colaboradores">
    <property name="text">
@@ -267,6 +274,11 @@
   <action name="actionRelEntradas">
    <property name="text">
     <string>Entradas</string>
+   </property>
+  </action>
+  <action name="actionRecargas">
+   <property name="text">
+    <string>Recargas</string>
    </property>
   </action>
  </widget>

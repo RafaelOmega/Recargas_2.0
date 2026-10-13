@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Importa todos os modelos para registro no Base.metadata."""
+"""Modelos de domínio do sistema."""
 from app.models.colaborador import Colaborador
+from app.models.recarga import Recarga, RecargaItem
 
-__all__ = ["Colaborador"]
+__all__ = ["Colaborador", "Recarga", "RecargaItem"]

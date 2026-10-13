@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'main_windowpVVdFn.ui'
+## Form generated from reading UI file 'main_windowkwfcEY.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -55,6 +55,8 @@ class Ui_MainWindow(object):
         self.actionBaixaFichaTecnica.setObjectName(u"actionBaixaFichaTecnica")
         self.actionRelEntradas = QAction(MainWindow)
         self.actionRelEntradas.setObjectName(u"actionRelEntradas")
+        self.actionRecargas = QAction(MainWindow)
+        self.actionRecargas.setObjectName(u"actionRecargas")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
@@ -127,10 +129,14 @@ class Ui_MainWindow(object):
         self.menubar.setGeometry(QRect(0, 0, 1000, 33))
         self.menuCadastros = QMenu(self.menubar)
         self.menuCadastros.setObjectName(u"menuCadastros")
+        self.menuLancamentos = QMenu(self.menubar)
+        self.menuLancamentos.setObjectName(u"menuLancamentos")
         MainWindow.setMenuBar(self.menubar)
 
         self.menubar.addAction(self.menuCadastros.menuAction())
+        self.menubar.addAction(self.menuLancamentos.menuAction())
         self.menuCadastros.addAction(self.actionCad_Colaboradores)
+        self.menuLancamentos.addAction(self.actionRecargas)
 
         self.retranslateUi(MainWindow)
 
@@ -151,8 +157,10 @@ class Ui_MainWindow(object):
         self.actionMaoObra.setText(QCoreApplication.translate("MainWindow", u"M\u00e3o de Obra", None))
         self.actionBaixaFichaTecnica.setText(QCoreApplication.translate("MainWindow", u"Baixa Ficha Tecnica", None))
         self.actionRelEntradas.setText(QCoreApplication.translate("MainWindow", u"Entradas", None))
+        self.actionRecargas.setText(QCoreApplication.translate("MainWindow", u"Recargas", None))
         self.lb_Comandos.setText("")
         self.lb_Versao.setText(QCoreApplication.translate("MainWindow", u"Vers\u00e3o 2.0.0", None))
         self.menuCadastros.setTitle(QCoreApplication.translate("MainWindow", u"Cadastros", None))
+        self.menuLancamentos.setTitle(QCoreApplication.translate("MainWindow", u"Lan\u00e7amentos", None))
     # retranslateUi
 
