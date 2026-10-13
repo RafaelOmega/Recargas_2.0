@@ -175,6 +175,18 @@
       </property>
       <item>
        <widget class="QLabel" name="lb_Data">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>30</height>
+         </size>
+        </property>
         <property name="text">
          <string>Data:</string>
         </property>
@@ -182,6 +194,18 @@
       </item>
       <item>
        <widget class="QDateEdit" name="dt_Data">
+        <property name="minimumSize">
+         <size>
+          <width>150</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>150</width>
+          <height>30</height>
+         </size>
+        </property>
         <property name="calendarPopup">
          <bool>true</bool>
         </property>
@@ -189,6 +213,18 @@
       </item>
       <item>
        <widget class="QPushButton" name="bt_Abrir_Recargas">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>30</height>
+         </size>
+        </property>
         <property name="text">
          <string>Abrir Recarga</string>
         </property>

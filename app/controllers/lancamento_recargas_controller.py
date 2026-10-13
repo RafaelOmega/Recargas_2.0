@@ -9,15 +9,27 @@ Fluxo mestre-detalhe:
   - "+" prepara uma nova recarga: escolhe a data e clica em
     "Abrir Recarga" para liberar a inclusão de itens;
   - "..." abre a pesquisa e carrega a recarga selecionada;
-  - Confirmar adiciona o item à grade (em memória); Salvar grava
-    cabeçalho e itens de uma vez; na edição os itens são substituídos;
-  - "Sair Recarga" cancela e volta ao estado inicial.
+  - "Abrir Recarga" habilita o fluxo próprio dos itens (em registro
+    novo E na edição): cada item é confirmado em memória (grade) com
+    o botão Confirmar; duplo clique num item da grade o recarrega nos
+    campos para edição (o Confirmar atualiza a linha em vez de
+    adicionar outra);
+  - "Sair Recarga" finaliza o lançamento dos itens e libera o
+    bt_Salvar — enquanto a recarga está aberta, salvar é bloqueado;
+  - Salvar grava cabeçalho e itens de uma vez (na edição os itens
+    são substituídos).
 
 A sequência é automática (gerada no salvar): o campo txt_Recargas é
 somente leitura. O benefício é fixo em "Refeição" (padrão do banco).
 
-Navegação (Tab) em modo Z: esquerda para a direita e de cima para baixo.
+Navegação (Tab) em modo Z: esquerda para a direita e de cima para
+baixo. Com a recarga aberta, o Z efetivo percorre apenas o fluxo
+próprio dos itens (combo -> carga -> sem carga -> valor -> confirmar
+-> grade -> limpar -> excluir -> sair), pois os demais widgets estão
+desabilitados e são pulados automaticamente pelo Qt.
 """
+from datetime import date
+
 from PySide6.QtCore import QDate, Qt
 from PySide6.QtGui import QKeySequence, QShortcut, QStandardItem
 from PySide6.QtGui import QStandardItemModel
@@ -41,9 +53,11 @@ except ImportError:
 logger = get_logger("lancamento_recargas")
 
 ESTADO_INICIAL = "inicial"
-ESTADO_NOVO = "novo"
+ESTADO_NOVO = "novo"       # aguardando "Abrir Recarga"
+ESTADO_ABERTA = "aberta"   # lançando/editando itens em memória
+ESTADO_PRONTA = "pronta"   # itens finalizados; salvar liberado
 ESTADO_VISUALIZACAO = "visualizacao"
-ESTADO_EDICAO = "edicao"
+ESTADO_EDICAO = "edicao"   # carregada e liberada para edição
 
 BENEFICIO_PADRAO = "Refeição"
 COLUNAS_ITENS = ["Colaborador", "CPF", "Carga", "Sem Carga", "Valor"]
@@ -66,6 +80,7 @@ class LancamentoRecargasController(QWidget):
                 "RecargaService nao encontrado - acoes desativadas")
 
         self._modo = ESTADO_INICIAL
+        self._item_em_edicao: int | None = None  # linha da grade em edição
         self._colaboradores = []
 
         self.ui.txt_Recargas.setReadOnly(True)
@@ -110,9 +125,15 @@ class LancamentoRecargasController(QWidget):
         self.ui.txt_Recargas.returnPressed.connect(self._pesquisar)
         self._at_f2 = QShortcut(QKeySequence(Qt.Key.Key_F2), self)
         self._at_f2.activated.connect(self._novo)
+        # duplo clique na grade carrega o item para edição
+        self.ui.tb_Itens.doubleClicked.connect(self._carregar_item_edicao)
 
     def _definir_tab_order(self):
-        """Ordem de tabulação em modo Z (esquerda->direita, cima->baixo)."""
+        """Ordem de tabulação em modo Z (esquerda->direita, cima->baixo).
+
+        Com a recarga aberta, os widgets fora do fluxo de itens estão
+        desabilitados e o Z efetivo fica restrito aos itens.
+        """
         self.setTabOrder(self.ui.txt_Recargas,
                          self.ui.bt_Pesquisar_Recargas)
         self.setTabOrder(self.ui.bt_Pesquisar_Recargas, self.ui.bt_Novo)
@@ -136,7 +157,7 @@ class LancamentoRecargasController(QWidget):
     # ---------------- estados da tela ----------------
 
     def _area_itens(self, habilitar: bool):
-        """Habilita/desabilita a inclusão e a grade de itens."""
+        """Habilita/desabilita o fluxo próprio dos itens."""
         self.ui.cmb_Colaboradores.setEnabled(habilitar)
         self.ui.txt_Carga.setEnabled(habilitar)
         self.ui.txt_Sem_Carga.setEnabled(habilitar)
@@ -171,9 +192,40 @@ class LancamentoRecargasController(QWidget):
         self.ui.bt_Abrir_Recargas.setEnabled(True)
         self._area_itens(False)  # liberada ao clicar em Abrir Recarga
 
-        self.ui.bt_Salvar.setEnabled(False)
+        self.ui.bt_Salvar.setEnabled(False)  # só após "Sair Recarga"
         self.ui.bt_Editar.setEnabled(False)
         self.ui.bt_Excluir.setEnabled(False)
+        self.ui.bt_Limpar.setEnabled(True)
+
+    def _estado_aberta(self):
+        """Recarga aberta: fluxo de itens ativo, salvar bloqueado."""
+        self.ui.txt_Recargas.setEnabled(False)
+        self.ui.bt_Pesquisar_Recargas.setEnabled(False)
+        self.ui.bt_Novo.setEnabled(False)
+
+        self.ui.dt_Data.setEnabled(False)  # data travada no lançamento
+        self.ui.bt_Abrir_Recargas.setEnabled(False)
+        self._area_itens(True)
+
+        self.ui.bt_Salvar.setEnabled(False)  # só após "Sair Recarga"
+        self.ui.bt_Editar.setEnabled(False)
+        self.ui.bt_Excluir.setEnabled(False)
+        self.ui.bt_Limpar.setEnabled(True)
+
+    def _estado_pronta(self):
+        """Itens finalizados: salvar liberado."""
+        self.ui.txt_Recargas.setEnabled(False)
+        self.ui.bt_Pesquisar_Recargas.setEnabled(False)
+        self.ui.bt_Novo.setEnabled(False)
+
+        self.ui.dt_Data.setEnabled(False)
+        self.ui.bt_Abrir_Recargas.setEnabled(False)
+        self._area_itens(False)
+
+        self.ui.bt_Salvar.setEnabled(True)
+        self.ui.bt_Editar.setEnabled(False)
+        self.ui.bt_Excluir.setEnabled(
+            bool(self.ui.txt_Recargas.text().strip()))
         self.ui.bt_Limpar.setEnabled(True)
 
     def _estado_visualizacao(self):
@@ -191,15 +243,17 @@ class LancamentoRecargasController(QWidget):
         self.ui.bt_Limpar.setEnabled(True)
 
     def _estado_edicao(self):
+        """Carregada e liberada: data editável; salvar e itens exigem
+        o ciclo Abrir Recarga -> Sair Recarga."""
         self.ui.txt_Recargas.setEnabled(False)  # sequência é a chave
         self.ui.bt_Pesquisar_Recargas.setEnabled(False)
         self.ui.bt_Novo.setEnabled(False)
 
         self.ui.dt_Data.setEnabled(True)
-        self.ui.bt_Abrir_Recargas.setEnabled(False)  # já aberta
-        self._area_itens(True)
+        self.ui.bt_Abrir_Recargas.setEnabled(True)
+        self._area_itens(False)
 
-        self.ui.bt_Salvar.setEnabled(True)
+        self.ui.bt_Salvar.setEnabled(False)  # só após "Sair Recarga"
         self.ui.bt_Editar.setEnabled(False)
         self.ui.bt_Excluir.setEnabled(True)
         self.ui.bt_Limpar.setEnabled(True)
@@ -231,16 +285,23 @@ class LancamentoRecargasController(QWidget):
         self.ui.dt_Data.setFocus()
 
     def _abrir_recarga(self):
-        """Libera a inclusão de itens da recarga em modo novo."""
-        if self._modo != ESTADO_NOVO:
+        """Abre a recarga para lançamento/edição de itens em memória."""
+        if self._modo not in (ESTADO_NOVO, ESTADO_EDICAO):
             return
-        self._area_itens(True)
-        self.ui.bt_Salvar.setEnabled(True)
+        self._modo = ESTADO_ABERTA
+        self._item_em_edicao = None
+        self._estado_aberta()
         self.ui.cmb_Colaboradores.setFocus()
 
     def _sair_recarga(self):
-        """Cancela a recarga em curso e volta ao estado inicial."""
-        self._limpar_campos()
+        """Finaliza o lançamento dos itens e libera o botão Salvar."""
+        if self._modo != ESTADO_ABERTA:
+            return
+        self._item_em_edicao = None
+        self._limpar_item()
+        self._modo = ESTADO_PRONTA
+        self._estado_pronta()
+        self.ui.bt_Salvar.setFocus()
 
     def _pesquisar(self):
         from app.controllers.pesquisa_recargas_controller import (
@@ -277,14 +338,12 @@ class LancamentoRecargasController(QWidget):
 
         dados = self._coletar_dados()
         try:
-            if self._modo == ESTADO_NOVO:
+            if dados.get("sequencia"):
+                self._service.atualizar(dados)
+            else:
                 recarga = self._service.salvar(dados)
                 # exibe a sequência gerada automaticamente
                 self.ui.txt_Recargas.setText(str(recarga.sequencia))
-            elif self._modo == ESTADO_EDICAO:
-                self._service.atualizar(dados)
-            else:
-                return
         except Exception as exc:
             logger.exception("Falha ao salvar recarga")
             QMessageBox.critical(
@@ -363,31 +422,71 @@ class LancamentoRecargasController(QWidget):
             self.ui.cmb_Colaboradores.setFocus()
             return
 
-        valor = float(self.ui.dbs_Valor.value())
+        valor = self.ui.dbs_Valor.value()
         if valor <= 0:
             QMessageBox.warning(
                 self, "Atenção", "Informe um valor maior que zero.")
             self.ui.dbs_Valor.setFocus()
             return
 
-        self._modelo.appendRow([
+        itens = [
             QStandardItem(colaborador.nome),
             QStandardItem(colaborador.documento or ""),
             QStandardItem(self.ui.txt_Carga.text().strip()),
             QStandardItem(self.ui.txt_Sem_Carga.text().strip()),
             QStandardItem(self._formatar_valor(valor)),
-        ])
+        ]
+        if self._item_em_edicao is not None:
+            # duplo clique carregou o item: atualiza a linha existente
+            linha = self._item_em_edicao
+            for coluna, item in enumerate(itens):
+                self._modelo.setItem(linha, coluna, item)
+            self._item_em_edicao = None
+        else:
+            self._modelo.appendRow(itens)
         self._atualizar_total()
         self._limpar_item()
         self.ui.cmb_Colaboradores.setFocus()
 
+    def _carregar_item_edicao(self, indice):
+        """Duplo clique na grade: recarrega o item nos campos."""
+        if self._modo != ESTADO_ABERTA or not indice.isValid():
+            return
+        linha = indice.row()
+        nome = self._modelo.item(linha, 0).text()
+        documento = self._modelo.item(linha, 1).text()
+        pos = self._indice_colaborador(nome, documento)
+        if pos >= 0:
+            self.ui.cmb_Colaboradores.setCurrentIndex(pos)
+        self.ui.txt_Carga.setText(self._modelo.item(linha, 2).text())
+        self.ui.txt_Sem_Carga.setText(self._modelo.item(linha, 3).text())
+        self.ui.dbs_Valor.setValue(
+            self._valor_para_float(self._modelo.item(linha, 4).text()))
+        self._item_em_edicao = linha
+        self.ui.cmb_Colaboradores.setFocus()
+
+    def _indice_colaborador(self, nome: str, documento: str) -> int:
+        """Localiza o colaborador no combo por nome e documento."""
+        for i in range(self.ui.cmb_Colaboradores.count()):
+            col = self.ui.cmb_Colaboradores.itemData(i)
+            if (col and col.nome == nome
+                    and (col.documento or "") == documento):
+                return i
+        return -1
+
     def _excluir_item(self):
         indice = self.ui.tb_Itens.currentIndex()
-        if not indice.isValid():
+        linha = indice.row() if indice.isValid() else self._item_em_edicao
+        if linha is None or linha < 0:
             QMessageBox.warning(
                 self, "Atenção", "Selecione um item na grade.")
             return
-        self._modelo.removeRow(indice.row())
+        self._modelo.removeRow(linha)
+        if self._item_em_edicao == linha:
+            self._item_em_edicao = None
+            self._limpar_item()
+        elif self._item_em_edicao is not None and self._item_em_edicao > linha:
+            self._item_em_edicao -= 1
         self._atualizar_total()
 
     def _limpar_item(self):
@@ -395,6 +494,7 @@ class LancamentoRecargasController(QWidget):
         self.ui.txt_Carga.clear()
         self.ui.txt_Sem_Carga.clear()
         self.ui.dbs_Valor.setValue(0.0)
+        self._item_em_edicao = None
 
     def _atualizar_total(self):
         total = 0.0
@@ -402,12 +502,15 @@ class LancamentoRecargasController(QWidget):
             item = self._modelo.item(linha, 4)
             if item is None:
                 continue
-            texto = item.text().replace(".", "").replace(",", ".")
-            try:
-                total += float(texto)
-            except ValueError:
-                pass
+            total += self._valor_para_float(item.text())
         self.ui.txt_Total.setText(f"R$ {self._formatar_valor(total)}")
+
+    @staticmethod
+    def _valor_para_float(texto: str) -> float:
+        try:
+            return float(texto.replace(".", "").replace(",", "."))
+        except ValueError:
+            return 0.0
 
     @staticmethod
     def _formatar_valor(valor: float) -> str:
@@ -426,25 +529,26 @@ class LancamentoRecargasController(QWidget):
         self._estado_inicial()
 
     def _coletar_dados(self) -> dict:
+        qdata = self.ui.dt_Data.date()
         itens = []
         for linha in range(self._modelo.rowCount()):
-            valor_texto = (self._modelo.item(linha, 4).text()
-                           .replace(".", "").replace(",", "."))
             itens.append({
                 "nome": self._modelo.item(linha, 0).text(),
                 "documento": self._modelo.item(linha, 1).text(),
                 "carga": self._modelo.item(linha, 2).text(),
                 "sem_carga": self._modelo.item(linha, 3).text(),
-                "valor": float(valor_texto),
+                "valor": self._valor_para_float(
+                    self._modelo.item(linha, 4).text()),
                 "beneficio": BENEFICIO_PADRAO,
             })
         dados = {
-            "data": self.ui.dt_Data.date().toPyDate(),
+            "data": date(qdata.year(), qdata.month(), qdata.day()),
             "descricao": "",
             "itens": itens,
         }
-        if self._modo == ESTADO_EDICAO:
-            dados["sequencia"] = int(self.ui.txt_Recargas.text())
+        sequencia = self.ui.txt_Recargas.text().strip()
+        if sequencia:
+            dados["sequencia"] = int(sequencia)
         return dados
 
     def _preencher(self, recarga):

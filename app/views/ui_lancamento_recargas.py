@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'lancamento_recargasZlPvur.ui'
+## Form generated from reading UI file 'lancamento_recargasSoKWkB.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -87,17 +87,23 @@ class Ui_Lancamento_Recargas(object):
         self.horizontalLayout_2.setContentsMargins(5, 5, 5, 5)
         self.lb_Data = QLabel(self.frm_Abrir_Recargas)
         self.lb_Data.setObjectName(u"lb_Data")
+        self.lb_Data.setMinimumSize(QSize(0, 30))
+        self.lb_Data.setMaximumSize(QSize(16777215, 30))
 
         self.horizontalLayout_2.addWidget(self.lb_Data)
 
         self.dt_Data = QDateEdit(self.frm_Abrir_Recargas)
         self.dt_Data.setObjectName(u"dt_Data")
+        self.dt_Data.setMinimumSize(QSize(150, 30))
+        self.dt_Data.setMaximumSize(QSize(150, 30))
         self.dt_Data.setCalendarPopup(True)
 
         self.horizontalLayout_2.addWidget(self.dt_Data)
 
         self.bt_Abrir_Recargas = QPushButton(self.frm_Abrir_Recargas)
         self.bt_Abrir_Recargas.setObjectName(u"bt_Abrir_Recargas")
+        self.bt_Abrir_Recargas.setMinimumSize(QSize(0, 30))
+        self.bt_Abrir_Recargas.setMaximumSize(QSize(16777215, 30))
 
         self.horizontalLayout_2.addWidget(self.bt_Abrir_Recargas)
 
