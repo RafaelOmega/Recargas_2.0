@@ -4,8 +4,10 @@
 Schema:
   colaboradores (id, codigo, nome, documento)
 
-O código é automático: sequencial numérico gerado no INSERT
-(1, 2, 3, ...), ignorando eventuais códigos não numéricos.
+O código é automático: vem da SEQUENCE seq_colaboradores_codigo
+(1, 2, 3, ...), criada e sincronizada pelo app.database.schema.
+Concorrente-safe: dois usuários salvando ao mesmo tempo nunca
+geram o mesmo código.
 """
 from app.database import get_connection
 from app.models.colaborador import Colaborador
@@ -15,11 +17,7 @@ logger = get_logger("colaborador_repository")
 
 _COLUNAS = "codigo, nome, documento"
 
-# próximo código numérico existente + 1 (sem zeros à esquerda)
-_PROXIMO_CODIGO = (
-    "(SELECT COALESCE(MAX(CAST(codigo AS INTEGER)), 0) + 1 "
-    "      FROM colaboradores WHERE codigo ~ '^[0-9]+$')::TEXT"
-)
+_PROXIMO_CODIGO = "nextval('seq_colaboradores_codigo')::TEXT"
 
 
 class ColaboradorRepository:
