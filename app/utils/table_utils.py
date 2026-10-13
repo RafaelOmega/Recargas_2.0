@@ -34,3 +34,12 @@ def configurar_tabela(table_view, coluna_stretch=None, ordenavel=False,
 
     if coluna_stretch is not None:
         header.setSectionResizeMode(coluna_stretch, QHeaderView.Stretch)
+
+
+def ajustar_larguras(table_view, coluna_stretch=None,
+                     largura_maxima=LARGURA_MAXIMA_PADRAO):
+    """Reajusta as larguras após (re)preencher o modelo da tabela."""
+    configurar_tabela(table_view, coluna_stretch=coluna_stretch,
+                      ordenavel=table_view.isSortingEnabled(),
+                      selecionavel=False,
+                      largura_maxima=largura_maxima)
