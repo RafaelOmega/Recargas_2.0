@@ -6,6 +6,9 @@ Operações de dados são delegadas ao ColaboradorService.
 
 O código é automático (gerado no salvar): o campo txt_Codigo é
 somente leitura, exibindo o código do colaborador carregado/salvo.
+
+Navegação (Tab) em modo Z: esquerda para a direita e de cima
+para baixo — código/pesquisar/novo -> nome/documento -> CRUD.
 """
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
@@ -46,6 +49,7 @@ class CadColaboradoresController(QWidget):
 
         self._conectar_botoes()
         self._conectar_teclas()
+        self._definir_tab_order()
         self._limpar_campos()
 
     # ---------------- conexoes ----------------
@@ -63,6 +67,23 @@ class CadColaboradoresController(QWidget):
         self.ui.txt_Codigo.returnPressed.connect(self._pesquisar)
         self._at_f2 = QShortcut(QKeySequence(Qt.Key.Key_F2), self)
         self._at_f2.activated.connect(self._novo)
+
+    def _definir_tab_order(self):
+        """Ordem de tabulação em modo Z (esquerda->direita, cima->baixo).
+
+        Linha 1 (frm_Codigo):  txt_Codigo -> bt_Pesquisar -> bt_Novo
+        Linha 2 (frm_Corpo):   txt_Nome -> txt_Documento
+        Linha 3 (frm_Crud):    bt_Salvar -> bt_Editar -> bt_Limpar -> bt_Excluir
+        """
+        self.setTabOrder(self.ui.txt_Codigo,
+                         self.ui.bt_Pesquisar_Colaborador)
+        self.setTabOrder(self.ui.bt_Pesquisar_Colaborador, self.ui.bt_Novo)
+        self.setTabOrder(self.ui.bt_Novo, self.ui.txt_Nome)
+        self.setTabOrder(self.ui.txt_Nome, self.ui.txt_Documento)
+        self.setTabOrder(self.ui.txt_Documento, self.ui.bt_Salvar)
+        self.setTabOrder(self.ui.bt_Salvar, self.ui.bt_Editar)
+        self.setTabOrder(self.ui.bt_Editar, self.ui.bt_Limpar)
+        self.setTabOrder(self.ui.bt_Limpar, self.ui.bt_Excluir)
 
     # ---------------- estados da tela ----------------
 

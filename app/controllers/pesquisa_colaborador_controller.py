@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Controller da pesquisa de colaboradores."""
-from PySide6.QtCore import QTimer
+"""Controller da pesquisa de colaboradores.
+
+Navegação (Tab) em modo Z: campo de pesquisa -> botão Confirmar
+-> grade de resultados. Ordenação padrão: coluna Nome (ascendente).
+"""
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QDialog, QMessageBox
 
@@ -16,6 +20,7 @@ except ImportError:
 
 logger = get_logger("pesquisa_colaborador")
 COLUNAS = ["Código", "Nome", "CPF"]
+COLUNA_NOME = 1
 COLUNA_STRETCH = 1
 DEBOUNCE_MS = 300
 
@@ -38,6 +43,9 @@ class PesquisaColaboradorController(QDialog):
         self.ui.tb_Colaborador.setModel(self._modelo)
         configurar_tabela(self.ui.tb_Colaborador,
                           coluna_stretch=COLUNA_STRETCH, ordenavel=True)
+        # ordenação padrão: coluna Nome, ascendente
+        self.ui.tb_Colaborador.sortByColumn(
+            COLUNA_NOME, Qt.SortOrder.AscendingOrder)
 
         self._timer_filtro = QTimer(self)
         self._timer_filtro.setSingleShot(True)
@@ -48,6 +56,8 @@ class PesquisaColaboradorController(QDialog):
         self.ui.txt_Pesquisa.returnPressed.connect(self._pesquisar)
         self.ui.tb_Colaborador.doubleClicked.connect(self.accept)
 
+        self._definir_tab_order()
+
         try:
             self._pesquisar()
         except Exception as exc:
@@ -55,6 +65,11 @@ class PesquisaColaboradorController(QDialog):
             QMessageBox.critical(
                 self, "Erro",
                 f"Não foi possível carregar colaboradores:\n{exc}")
+
+    def _definir_tab_order(self):
+        """Ordem de tabulação em modo Z: pesquisa -> Confirmar -> grade."""
+        self.setTabOrder(self.ui.txt_Pesquisa, self.ui.bt_Pesquisa)
+        self.setTabOrder(self.ui.bt_Pesquisa, self.ui.tb_Colaborador)
 
     def _agendar_filtro(self):
         self._timer_filtro.start(DEBOUNCE_MS)
@@ -77,6 +92,8 @@ class PesquisaColaboradorController(QDialog):
                 QStandardItem(colaborador.nome),
                 QStandardItem(colaborador.documento or ""),
             ])
+        # garante a ordenação padrão por Nome a cada recarga da grade
+        self._modelo.sort(COLUNA_NOME, Qt.SortOrder.AscendingOrder)
         ajustar_larguras(self.ui.tb_Colaborador, coluna_stretch=COLUNA_STRETCH)
 
     def colaborador_selecionado(self) -> Colaborador | None:
