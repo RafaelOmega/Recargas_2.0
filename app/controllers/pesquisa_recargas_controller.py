@@ -5,6 +5,9 @@ Navegação (Tab) em modo Z: campo de pesquisa -> botão Confirmar
 -> grade de resultados. Ordenação padrão: coluna Sequência
 (ascendente, ordenação NUMÉRICA — 9 vem antes de 10).
 
+A coluna Descrição exibe os ITENS da recarga em uma única linha
+(nomes separados por vírgula); sem itens, mostra a descrição salva.
+
 Para a ordenação ser numérica, o valor real fica no EditRole do item
 (Sequência como int, Data como ISO YYYY-MM-DD) e o texto exibido no
 DisplayRole. O QStandardItemModel ordena pelo EditRole.
@@ -47,8 +50,6 @@ class PesquisaRecargasController(QDialog):
         self.ui.tb_Recargas.setModel(self._modelo)
         configurar_tabela(self.ui.tb_Recargas,
                           coluna_stretch=COLUNA_STRETCH, ordenavel=True)
-        self.ui.tb_Recargas.setEditTriggers(
-            self.ui.tb_Recargas.EditTrigger.NoEditTriggers)
         # ordenação padrão: coluna Sequência, ascendente (numérica)
         self.ui.tb_Recargas.sortByColumn(
             COLUNA_PADRAO, Qt.SortOrder.AscendingOrder)
@@ -91,6 +92,12 @@ class PesquisaRecargasController(QDialog):
         item.setData(valor_ordenacao, Qt.ItemDataRole.EditRole)
         return item
 
+    @staticmethod
+    def _descricao_itens(recarga: Recarga) -> str:
+        """Itens da recarga em uma única linha (coluna Descrição)."""
+        nomes = [item.nome for item in (recarga.itens or []) if item.nome]
+        return ", ".join(nomes) if nomes else (recarga.descricao or "")
+
     def _pesquisar(self):
         self._timer_filtro.stop()
         try:
@@ -112,7 +119,8 @@ class PesquisaRecargasController(QDialog):
                 self._item_ordenavel(
                     recarga.data.strftime("%d/%m/%Y"),
                     recarga.data.isoformat()),
-                QStandardItem(recarga.descricao or ""),
+                # itens em linha (nomes separados por vírgula)
+                QStandardItem(self._descricao_itens(recarga)),
             ])
         # garante a ordenação padrão por Sequência a cada recarga da grade
         self._modelo.sort(COLUNA_PADRAO, Qt.SortOrder.AscendingOrder)

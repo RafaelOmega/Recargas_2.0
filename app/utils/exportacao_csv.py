@@ -2,8 +2,7 @@
 """Exportação de registros em CSV (Regra 001).
 
 Ao salvar um registro, um CSV é gerado na área de trabalho do
-computador onde o sistema roda, dentro da pasta Recargas_2.0
-(criada automaticamente se não existir).
+computador onde o sistema roda, salvo DIRETAMENTE nela (sem subpasta).
 
 Compatível com PyInstaller: nada depende do caminho do código-fonte.
 A área de trabalho é lida do registro do Windows — cobre pastas
@@ -11,7 +10,7 @@ redirecionadas por OneDrive/empresa e nomes localizados; em outros
 sistemas, usa o home do usuário.
 
 Formato do CSV de recarga (conforme exemplo carga_de_13-10-2026.csv):
-colunas nome, documento, valor, beneficio; separador vírgula;
+colunas Nome, Documento, Valor, Benefício; separador ponto e vírgula;
 UTF-8 com BOM (abre direto no Excel). Nome do arquivo:
 carga_de_<DD-MM-AAAA>.csv — se já existir (mesmo dia, mais de um
 salvamento), um sufixo numérico é acrescentado para não sobrescrever.
@@ -25,8 +24,6 @@ from pathlib import Path
 from app.utils.logger import get_logger
 
 logger = get_logger("exportacao_csv")
-
-PASTA_EXPORTACAO = "Recargas_2.0"
 
 
 def pasta_area_trabalho() -> Path:
@@ -58,23 +55,16 @@ def _area_trabalho_windows() -> Path:
         return Path.home() / "Desktop"
 
 
-def pasta_exportacao() -> Path:
-    """Pasta de exportação na área de trabalho (cria se não existir)."""
-    pasta = pasta_area_trabalho() / PASTA_EXPORTACAO
-    pasta.mkdir(parents=True, exist_ok=True)
-    return pasta
-
-
 def exportar_csv(nome_base: str, colunas: list[str],
                  linhas: list[tuple]) -> Path:
-    """Grava um CSV na pasta de exportação e devolve o caminho gerado.
+    """Grava um CSV na área de trabalho e devolve o caminho gerado.
 
     O nome recebe carimbo de data/hora para nunca sobrescrever uma
-    exportação anterior. Separador vírgula e UTF-8 com BOM: abre
-    direto no Excel com acentuação correta.
+    exportação anterior. Separador ponto e vírgula e UTF-8 com BOM:
+    abre direto no Excel com acentuação correta.
     """
     carimbo = datetime.now().strftime("%Y%m%d_%H%M%S")
-    caminho = pasta_exportacao() / f"{nome_base}_{carimbo}.csv"
+    caminho = pasta_area_trabalho() / f"{nome_base}_{carimbo}.csv"
     _gravar(caminho, colunas, linhas)
     return caminho
 
@@ -82,12 +72,11 @@ def exportar_csv(nome_base: str, colunas: list[str],
 def exportar_recarga_csv(recarga) -> Path:
     """CSV de uma recarga salva (Regra 001): uma linha por item.
 
-    Formato idêntico ao exemplo combinado (carga_de_13-10-2026.csv):
-    colunas nome, documento, valor, beneficio; separador vírgula.
-    Nome do arquivo: carga_de_<DD-MM-AAAA>.csv; se já existir, um
-    sufixo numérico é acrescentado (nunca sobrescreve).
+    Formato: colunas Nome, Documento, Valor, Benefício; separador
+    ponto e vírgula. Nome do arquivo: carga_de_<DD-MM-AAAA>.csv; se
+    já existir, um sufixo numérico é acrescentado (nunca sobrescreve).
     """
-    colunas = ["nome", "documento", "valor", "beneficio"]
+    colunas = ["Nome", "Documento", "Valor", "Benefício"]
     linhas = [
         (item.nome, item.documento,
          _formatar_valor_csv(item.valor), item.beneficio)
@@ -100,7 +89,7 @@ def exportar_recarga_csv(recarga) -> Path:
 def _exportar_sem_sobrescrever(nome_base: str, colunas: list[str],
                                linhas: list[tuple]) -> Path:
     """Grava o CSV; se o nome já existir, acrescenta _2, _3, ..."""
-    pasta = pasta_exportacao()
+    pasta = pasta_area_trabalho()
     caminho = pasta / f"{nome_base}.csv"
     contador = 2
     while caminho.exists():
@@ -113,7 +102,7 @@ def _exportar_sem_sobrescrever(nome_base: str, colunas: list[str],
 def _gravar(caminho: Path, colunas: list[str],
             linhas: list[tuple]) -> None:
     with open(caminho, "w", newline="", encoding="utf-8-sig") as arq:
-        escritor = csv.writer(arq, delimiter=",")
+        escritor = csv.writer(arq, delimiter=";")
         escritor.writerow(colunas)
         escritor.writerows(linhas)
     logger.info("CSV exportado: %s", caminho)

@@ -10,21 +10,29 @@ Uma seção por regra, com número fixo — não renumerar.
 Ao salvar um registro, um arquivo CSV deve ser gerado automaticamente.
 
 - Gerado a CADA salvamento (inclusão e edição).
-- Destino: área de trabalho do computador onde o sistema está rodando —
-  resolvida em tempo de execução, nunca caminho fixo (o sistema roda
-  em vários computadores).
-- Controle de pastas automático: os arquivos ficam em
-  `Área de Trabalho\Recargas_2.0\`; a pasta é criada se não existir.
-- Compatível com PyInstaller: nada depende do caminho do código-fonte;
-  funciona igual em desenvolvimento e no executável empacotado.
-- Formato do CSV (conforme exemplo `carga_de_13-10-2026.csv`):
-  - Colunas: `nome, documento, valor, beneficio` (uma linha por item).
-  - Separador: vírgula. UTF-8 com BOM (abre direto no Excel).
+- Destino: DIRETO na área de trabalho do computador onde o sistema
+  está rodando — sem subpasta, caminho resolvido em tempo de execução
+  (o sistema roda em vários computadores).
+- Compatível com PyInstaller: nada depende do caminho do código-fonte.
+- Formato do CSV:
+  - Colunas: `Nome, Documento, Valor, Benefício` (uma linha por item).
+  - Separador: ponto e vírgula (`;`). UTF-8 com BOM (abre no Excel).
   - Valor inteiro sem decimais quando for número redondo (ex.: `40`).
   - Nome do arquivo: `carga_de_<DD-MM-AAAA>.csv` (data da recarga).
-    Se já existir (mesmo dia, mais de um salvamento), acrescenta
-    sufixo numérico (`_2`, `_3`, ...) — nunca sobrescreve.
+    Se já existir, acrescenta sufixo numérico (`_2`, `_3`, ...) —
+    nunca sobrescreve.
 
 **Implementação:** `app/utils/exportacao_csv.py` (infraestrutura) +
 `RecargaService` (disparo ao salvar). Falha de exportação NUNCA
 cancela o salvamento do registro — é registrada no log.
+
+---
+
+## REGRA 002 — Pesquisa de recargas: itens na coluna Descrição
+
+Na pesquisa de recargas, a coluna Descrição exibe os ITENS da recarga
+em uma única linha (nomes separados por vírgula).
+
+- Sem itens carregados, exibe a descrição salva no banco.
+- O filtro de pesquisa também encontra pelo nome do item (além de
+  sequência e descrição).

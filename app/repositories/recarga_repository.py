@@ -47,14 +47,12 @@ class RecargaRepository:
         return recarga
 
     def atualizar(self, recarga: Recarga) -> bool:
-        """Atualiza o cabeçalho e substitui todos os itens."""
+        """Atualiza o cabeçalho e substitui os itens existentes."""
         with self._conn:
             with self._conn.cursor() as cur:
                 cur.execute(
-                    "UPDATE recargas "
-                    "SET data = %s, descricao = %s "
-                    "WHERE sequencia = %s "
-                    "RETURNING id",
+                    "UPDATE recargas SET data = %s, descricao = %s "
+                    "WHERE sequencia = %s RETURNING id",
                     (recarga.data, recarga.descricao, recarga.sequencia),
                 )
                 linha = cur.fetchone()
@@ -121,7 +119,11 @@ class RecargaRepository:
         return recarga
 
     def pesquisar(self, filtro: str = "") -> list[Recarga]:
-        """Pesquisa cabeçalhos por sequência/descrição (sem itens)."""
+        """Pesquisa por sequência/descrição/nome de item.
+
+        Cada recarga vem com os itens carregados, para a grade da
+        pesquisa exibir os itens em linha na coluna Descrição.
+        """
         termo = f"%{filtro}%"
         with self._conn:
             with self._conn.cursor() as cur:
@@ -131,13 +133,39 @@ class RecargaRepository:
                       FROM recargas
                      WHERE CAST(sequencia AS TEXT) ILIKE %s
                         OR descricao ILIKE %s
+                        OR EXISTS (
+                            SELECT 1 FROM recargas_itens ri
+                             WHERE ri.recarga_id = recargas.id
+                               AND ri.nome ILIKE %s)
                      ORDER BY sequencia
                     """,
-                    (termo, termo),
+                    (termo, termo, termo),
                 )
-                linhas = cur.fetchall()
-        return [r for r in (self._linha_para_recarga(l)
-                            for l in linhas) if r]
+                recargas = [r for r in (self._linha_para_recarga(l)
+                                        for l in cur.fetchall()) if r]
+                self._carregar_itens(cur, recargas)
+        return recargas
+
+    def _carregar_itens(self, cur, recargas: list[Recarga]) -> None:
+        """Carrega os itens de várias recargas em uma única consulta."""
+        if not recargas:
+            return
+        ids = [r.id for r in recargas]
+        cur.execute(
+            "SELECT id, recarga_id, nome, documento, valor, "
+            "       beneficio, carga, sem_carga "
+            "FROM recargas_itens WHERE recarga_id = ANY(%s) "
+            "ORDER BY recarga_id, id",
+            (ids,),
+        )
+        por_recarga = {r.id: r for r in recargas}
+        for linha in cur.fetchall():
+            recarga = por_recarga.get(linha[1])
+            if recarga is None:
+                continue
+            if recarga.itens is None:
+                recarga.itens = []
+            recarga.itens.append(self._linha_para_item(linha))
 
     # ---------------- auxiliares de leitura ----------------
 

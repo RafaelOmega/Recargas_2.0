@@ -3,7 +3,12 @@
 
 Responsabilidade: APENAS controle de tela (botões, campos, navegação).
 Operações de dados são delegadas ao RecargaService (cabeçalho + itens
-na mesma transação) e ao ColaboradorService (combo de itens).
+na mesma transação) e ao ColaboradorService (seleção de colaborador).
+
+Seleção de colaborador por código: digite o código em
+txt_Cod_Colaborador e pressione Enter, ou clique em "..." para abrir
+a pesquisa de colaboradores. O nome é preenchido automaticamente em
+txt_Nome (somente leitura).
 
 Fluxo mestre-detalhe:
   - "+" prepara uma nova recarga: escolhe a data e clica em
@@ -24,9 +29,9 @@ somente leitura. O benefício é fixo em "Refeição" (padrão do banco).
 
 Navegação (Tab) em modo Z: esquerda para a direita e de cima para
 baixo. Com a recarga aberta, o Z efetivo percorre apenas o fluxo
-próprio dos itens (combo -> carga -> sem carga -> valor -> confirmar
--> grade -> limpar -> excluir -> sair), pois os demais widgets estão
-desabilitados e são pulados automaticamente pelo Qt.
+próprio dos itens (código -> pesquisa -> nome -> carga -> sem carga
+-> valor -> confirmar -> grade -> limpar -> excluir -> sair), pois
+os demais widgets estão desabilitados e são pulados pelo Qt.
 """
 from datetime import date
 
@@ -82,10 +87,12 @@ class LancamentoRecargasController(QWidget):
 
         self._modo = ESTADO_INICIAL
         self._item_em_edicao: int | None = None  # linha da grade em edição
-        self._colaboradores = []
+        self._colaboradores = []                 # cadastro p/ localizar snapshot
+        self._colaborador_selecionado: Colaborador | None = None
 
         self.ui.txt_Recargas.setReadOnly(True)
         self.ui.txt_Total.setReadOnly(True)
+        self.ui.txt_Nome.setReadOnly(True)  # nome vem do código/pesquisa
         self.ui.dbs_Valor.setDecimals(2)
         self.ui.dbs_Valor.setMaximum(9999999.0)
 
@@ -112,6 +119,8 @@ class LancamentoRecargasController(QWidget):
         self.ui.bt_Novo.clicked.connect(self._novo)
         self.ui.bt_Pesquisar_Recargas.clicked.connect(self._pesquisar)
         self.ui.bt_Abrir_Recargas.clicked.connect(self._abrir_recarga)
+        self.ui.bt_Pesquisar_Colaborador.clicked.connect(
+            self._pesquisar_colaborador)
         self.ui.bt_Confirmar_Item.clicked.connect(self._confirmar_item)
         self.ui.bt_Limpar_Item.clicked.connect(self._limpar_item)
         self.ui.bt_Excluir_Item.clicked.connect(self._excluir_item)
@@ -128,6 +137,11 @@ class LancamentoRecargasController(QWidget):
         self._at_f2.activated.connect(self._novo)
         # duplo clique na grade carrega o item para edição
         self.ui.tb_Itens.doubleClicked.connect(self._carregar_item_edicao)
+        # código do colaborador: Enter resolve; digitar invalida a seleção
+        self.ui.txt_Cod_Colaborador.returnPressed.connect(
+            self._buscar_colaborador_por_codigo)
+        self.ui.txt_Cod_Colaborador.textEdited.connect(
+            self._colaborador_digitado)
 
     def _definir_tab_order(self):
         """Ordem de tabulação em modo Z (esquerda->direita, cima->baixo).
@@ -141,8 +155,12 @@ class LancamentoRecargasController(QWidget):
         self.setTabOrder(self.ui.bt_Novo, self.ui.dt_Data)
         self.setTabOrder(self.ui.dt_Data, self.ui.bt_Abrir_Recargas)
         self.setTabOrder(self.ui.bt_Abrir_Recargas,
-                         self.ui.cmb_Colaboradores)
-        self.setTabOrder(self.ui.cmb_Colaboradores, self.ui.txt_Carga)
+                         self.ui.txt_Cod_Colaborador)
+        self.setTabOrder(self.ui.txt_Cod_Colaborador,
+                         self.ui.bt_Pesquisar_Colaborador)
+        self.setTabOrder(self.ui.bt_Pesquisar_Colaborador,
+                         self.ui.txt_Nome)
+        self.setTabOrder(self.ui.txt_Nome, self.ui.txt_Carga)
         self.setTabOrder(self.ui.txt_Carga, self.ui.txt_Sem_Carga)
         self.setTabOrder(self.ui.txt_Sem_Carga, self.ui.dbs_Valor)
         self.setTabOrder(self.ui.dbs_Valor, self.ui.bt_Confirmar_Item)
@@ -159,7 +177,9 @@ class LancamentoRecargasController(QWidget):
 
     def _area_itens(self, habilitar: bool):
         """Habilita/desabilita o fluxo próprio dos itens."""
-        self.ui.cmb_Colaboradores.setEnabled(habilitar)
+        self.ui.txt_Cod_Colaborador.setEnabled(habilitar)
+        self.ui.bt_Pesquisar_Colaborador.setEnabled(habilitar)
+        self.ui.txt_Nome.setEnabled(habilitar)
         self.ui.txt_Carga.setEnabled(habilitar)
         self.ui.txt_Sem_Carga.setEnabled(habilitar)
         self.ui.dbs_Valor.setEnabled(habilitar)
@@ -292,7 +312,7 @@ class LancamentoRecargasController(QWidget):
         self._modo = ESTADO_ABERTA
         self._item_em_edicao = None
         self._estado_aberta()
-        self.ui.cmb_Colaboradores.setFocus()
+        self.ui.txt_Cod_Colaborador.setFocus()
 
     def _sair_recarga(self):
         """Finaliza o lançamento dos itens e libera o botão Salvar."""
@@ -325,7 +345,7 @@ class LancamentoRecargasController(QWidget):
         if self._modelo.rowCount() == 0:
             QMessageBox.warning(
                 self, "Atenção", "Inclua pelo menos um item na recarga.")
-            self.ui.cmb_Colaboradores.setFocus()
+            self.ui.txt_Cod_Colaborador.setFocus()
             return False
         return True
 
@@ -396,10 +416,10 @@ class LancamentoRecargasController(QWidget):
         self._limpar_campos()
         self.ui.txt_Recargas.setFocus()
 
-    # ---------------- itens da grade ----------------
+    # ---------------- selecao de colaborador ----------------
 
     def _carregar_colaboradores(self):
-        self.ui.cmb_Colaboradores.clear()
+        """Carrega o cadastro para localizar snapshots no duplo clique."""
         self._colaboradores = []
         if self._colaborador_service is None:
             return
@@ -410,17 +430,72 @@ class LancamentoRecargasController(QWidget):
             QMessageBox.critical(
                 self, "Erro",
                 f"Não foi possível carregar colaboradores:\n{exc}")
+
+    def _colaborador_digitado(self):
+        """Usuário digitou outro código: invalida a seleção anterior."""
+        self._colaborador_selecionado = None
+        self.ui.txt_Nome.clear()
+
+    def _buscar_colaborador_por_codigo(self):
+        """Enter no campo de código: resolve e preenche o nome."""
+        codigo = self.ui.txt_Cod_Colaborador.text().strip()
+        if not codigo:
             return
-        for colaborador in self._colaboradores:
-            self.ui.cmb_Colaboradores.addItem(
-                f"{colaborador.codigo} - {colaborador.nome}", colaborador)
+        if self._colaborador_service is None:
+            QMessageBox.critical(
+                self, "Erro", "Service de colaboradores indisponível.")
+            return
+        try:
+            colaborador = self._colaborador_service.buscar_por_codigo(
+                codigo)
+        except Exception as exc:
+            logger.exception("Falha ao buscar colaborador por código")
+            QMessageBox.critical(
+                self, "Erro",
+                f"Não foi possível buscar o colaborador:\n{exc}")
+            return
+        if colaborador is None:
+            QMessageBox.warning(
+                self, "Atenção",
+                f"Colaborador '{codigo}' não encontrado.")
+            self._colaborador_selecionado = None
+            self.ui.txt_Nome.clear()
+            return
+        self._aplicar_colaborador(colaborador)
+
+    def _pesquisar_colaborador(self):
+        """'...' abre a pesquisa de colaboradores e aplica o escolhido."""
+        from app.controllers.pesquisa_colaborador_controller import (
+            PesquisaColaboradorController,
+        )
+        try:
+            dialogo = PesquisaColaboradorController(self)
+        except Exception as exc:
+            logger.exception("Erro ao abrir pesquisa de colaboradores")
+            QMessageBox.critical(
+                self, "Erro",
+                f"Não foi possível abrir a pesquisa:\n{exc}")
+            return
+        if dialogo.exec() != dialogo.DialogCode.Accepted:
+            return
+        colaborador = dialogo.colaborador_selecionado()
+        if colaborador:
+            self._aplicar_colaborador(colaborador)
+            self.ui.txt_Carga.setFocus()
+
+    def _aplicar_colaborador(self, colaborador: Colaborador):
+        """Preenche código/nome e guarda o colaborador selecionado."""
+        self._colaborador_selecionado = colaborador
+        self.ui.txt_Cod_Colaborador.setText(colaborador.codigo or "")
+        self.ui.txt_Nome.setText(colaborador.nome)
 
     @staticmethod
     def _so_digitos(texto: str) -> str:
         return "".join(c for c in (texto or "") if c.isdigit())
 
-    def _indice_colaborador(self, nome: str, documento: str) -> int:
-        """Localiza o colaborador no combo por documento e nome.
+    def _localizar_colaborador(self, nome: str,
+                               documento: str) -> Colaborador | None:
+        """Localiza o colaborador no cadastro por documento e nome.
 
         1) documento igual (apenas dígitos, ignora formatação);
         2) nome igual ignorando maiúsculas/minúsculas e espaços.
@@ -431,39 +506,27 @@ class LancamentoRecargasController(QWidget):
         nome_norm = " ".join(nome.split()).casefold()
 
         if doc:
-            for i in range(self.ui.cmb_Colaboradores.count()):
-                col = self.ui.cmb_Colaboradores.itemData(i)
-                if col and self._so_digitos(col.documento) == doc:
-                    return i
-        for i in range(self.ui.cmb_Colaboradores.count()):
-            col = self.ui.cmb_Colaboradores.itemData(i)
-            if col and " ".join(col.nome.split()).casefold() == nome_norm:
-                return i
-        return -1
+            for col in self._colaboradores:
+                if self._so_digitos(col.documento) == doc:
+                    return col
+        for col in self._colaboradores:
+            if " ".join(col.nome.split()).casefold() == nome_norm:
+                return col
+        return None
 
-    def _garantir_colaborador_snapshot(self, nome: str,
-                                       documento: str) -> int:
-        """Garante uma entrada no combo para um snapshot sem cadastro.
-
-        Itens importados/antigos podem referenciar colaboradores que
-        não estão (ou mudaram) no cadastro. Cria uma entrada temporária
-        com o snapshot para o duplo clique sempre carregar o item.
-        """
-        pos = self._indice_colaborador(nome, documento)
-        if pos >= 0:
-            return pos
-        snapshot = Colaborador(id=None, codigo="", nome=nome,
-                               documento=documento)
-        self.ui.cmb_Colaboradores.addItem(
-            f"{nome} (fora do cadastro)", snapshot)
-        return self.ui.cmb_Colaboradores.count() - 1
+    # ---------------- itens da grade ----------------
 
     def _confirmar_item(self):
-        colaborador = self.ui.cmb_Colaboradores.currentData()
+        colaborador = self._colaborador_selecionado
+        if colaborador is None and self.ui.txt_Cod_Colaborador.text().strip():
+            # código digitado sem Enter: tenta resolver antes de validar
+            self._buscar_colaborador_por_codigo()
+            colaborador = self._colaborador_selecionado
         if colaborador is None:
             QMessageBox.warning(
-                self, "Atenção", "Selecione o colaborador.")
-            self.ui.cmb_Colaboradores.setFocus()
+                self, "Atenção",
+                "Selecione o colaborador (código ou pesquisa).")
+            self.ui.txt_Cod_Colaborador.setFocus()
             return
 
         valor = self.ui.dbs_Valor.value()
@@ -490,7 +553,7 @@ class LancamentoRecargasController(QWidget):
             self._modelo.appendRow(itens)
         self._atualizar_total()
         self._limpar_item()
-        self.ui.cmb_Colaboradores.setFocus()
+        self.ui.txt_Cod_Colaborador.setFocus()
 
     def _carregar_item_edicao(self, indice):
         """Duplo clique na grade: recarrega o item nos campos."""
@@ -499,14 +562,18 @@ class LancamentoRecargasController(QWidget):
         linha = indice.row()
         nome = self._modelo.item(linha, 0).text()
         documento = self._modelo.item(linha, 1).text()
-        pos = self._garantir_colaborador_snapshot(nome, documento)
-        self.ui.cmb_Colaboradores.setCurrentIndex(pos)
+        colaborador = self._localizar_colaborador(nome, documento)
+        if colaborador is None:
+            # snapshot sem cadastro: entrada temporária para edição
+            colaborador = Colaborador(id=None, codigo="", nome=nome,
+                                      documento=documento)
+        self._aplicar_colaborador(colaborador)
         self.ui.txt_Carga.setText(self._modelo.item(linha, 2).text())
         self.ui.txt_Sem_Carga.setText(self._modelo.item(linha, 3).text())
         self.ui.dbs_Valor.setValue(
             self._valor_para_float(self._modelo.item(linha, 4).text()))
         self._item_em_edicao = linha
-        self.ui.cmb_Colaboradores.setFocus()
+        self.ui.txt_Cod_Colaborador.setFocus()
 
     def _excluir_item(self):
         indice = self.ui.tb_Itens.currentIndex()
@@ -524,7 +591,9 @@ class LancamentoRecargasController(QWidget):
         self._atualizar_total()
 
     def _limpar_item(self):
-        self.ui.cmb_Colaboradores.setCurrentIndex(-1)
+        self._colaborador_selecionado = None
+        self.ui.txt_Cod_Colaborador.clear()
+        self.ui.txt_Nome.clear()
         self.ui.txt_Carga.clear()
         self.ui.txt_Sem_Carga.clear()
         self.ui.dbs_Valor.setValue(0.0)
