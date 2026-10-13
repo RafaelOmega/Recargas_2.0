@@ -9,11 +9,12 @@ A coluna Data é exibida em formato brasileiro (dd/mm/aaaa) e a
 coluna Descrição mostra os ITENS da recarga em uma única linha
 (nomes separados por vírgula); sem itens, mostra a descrição salva.
 
-Para a ordenação ser numérica/cronológica, o valor real fica no
-EditRole do item (Sequência como int, Data como ISO YYYY-MM-DD) e o
-texto exibido no DisplayRole. O sortRole do modelo é configurado
-para EditRole — vale para a ordenação padrão E para o clique no
-cabeçalho.
+Ordenação numérica/cronológica: no QStandardItem, DisplayRole e
+EditRole COMPARTILHAM o mesmo armazenamento — setData(EditRole)
+sobrescreve o texto exibido. Por isso o valor de ordenação fica no
+Qt.UserRole (papel livre, separado do texto) e o sortRole do modelo
+aponta para ele: exibição no DisplayRole, ordenação (padrão e clique
+no cabeçalho) pelo UserRole.
 """
 from datetime import date, datetime
 
@@ -55,8 +56,9 @@ class PesquisaRecargasController(QDialog):
         self.ui.tb_Recargas.setModel(self._modelo)
         configurar_tabela(self.ui.tb_Recargas,
                           coluna_stretch=COLUNA_STRETCH, ordenavel=True)
-        # ordenação (padrão e clique no cabeçalho) usa o EditRole
-        self._modelo.setSortRole(Qt.ItemDataRole.EditRole)
+        # ordenação (padrão e clique no cabeçalho) usa o UserRole —
+        # EditRole no QStandardItem sobrescreve o texto exibido
+        self._modelo.setSortRole(Qt.ItemDataRole.UserRole)
         # ordenação padrão: coluna Sequência, descendente (numérica)
         self.ui.tb_Recargas.sortByColumn(
             COLUNA_PADRAO, Qt.SortOrder.DescendingOrder)
@@ -92,11 +94,13 @@ class PesquisaRecargasController(QDialog):
     def _item_ordenavel(texto: str, valor_ordenacao) -> QStandardItem:
         """Item que exibe texto mas ordena pelo valor informado.
 
-        O modelo usa sortRole = EditRole; o texto do DisplayRole
-        permanece apenas para exibição.
+        O valor de ordenação vai no Qt.UserRole: no QStandardItem o
+        EditRole compartilha armazenamento com o DisplayRole e
+        sobrescreveria o texto exibido. O sortRole do modelo aponta
+        para o UserRole.
         """
         item = QStandardItem(texto)
-        item.setData(valor_ordenacao, Qt.ItemDataRole.EditRole)
+        item.setData(valor_ordenacao, Qt.ItemDataRole.UserRole)
         return item
 
     @staticmethod
@@ -132,16 +136,17 @@ class PesquisaRecargasController(QDialog):
         self._modelo.removeRows(0, self._modelo.rowCount())
         for recarga in registros:
             data = self._para_data(recarga.data)
+            descricao = self._descricao_itens(recarga)
             self._modelo.appendRow([
-                # sequência como int no EditRole: ordenação numérica
+                # sequência como int no UserRole: ordenação numérica
                 self._item_ordenavel(str(recarga.sequencia),
                                      recarga.sequencia),
-                # exibição dd/mm/aaaa; ISO no EditRole: ordem cronológica
+                # exibição dd/mm/aaaa; ISO no UserRole: ordem cronológica
                 self._item_ordenavel(
                     data.strftime("%d/%m/%Y"),
                     data.isoformat()),
-                # itens em linha (nomes separados por vírgula)
-                QStandardItem(self._descricao_itens(recarga)),
+                # itens em linha; ordena pelo próprio texto
+                self._item_ordenavel(descricao, descricao),
             ])
         # garante a ordenação padrão: Sequência, do maior para o menor
         self._modelo.sort(COLUNA_PADRAO, Qt.SortOrder.DescendingOrder)
