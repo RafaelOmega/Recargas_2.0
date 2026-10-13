@@ -355,6 +355,18 @@
       </item>
       <item row="1" column="8">
        <widget class="QDoubleSpinBox" name="dbs_Valor">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>30</height>
+         </size>
+        </property>
         <property name="prefix">
          <string>R$ </string>
         </property>
@@ -399,10 +411,35 @@
        </widget>
       </item>
       <item row="0" column="1" colspan="6">
-       <widget class="QComboBox" name="cmb_Colaboradores"/>
+       <widget class="QComboBox" name="cmb_Colaboradores">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>30</height>
+         </size>
+        </property>
+       </widget>
       </item>
       <item row="1" column="9">
        <widget class="QPushButton" name="bt_Confirmar_Item">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>30</height>
+         </size>
+        </property>
         <property name="text">
          <string>Confirmar</string>
         </property>

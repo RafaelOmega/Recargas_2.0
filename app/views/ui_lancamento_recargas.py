@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'lancamento_recargasSoKWkB.ui'
+## Form generated from reading UI file 'lancamento_recargashHOMvL.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -156,6 +156,8 @@ class Ui_Lancamento_Recargas(object):
 
         self.dbs_Valor = QDoubleSpinBox(self.frm_Inclusao_Itens)
         self.dbs_Valor.setObjectName(u"dbs_Valor")
+        self.dbs_Valor.setMinimumSize(QSize(0, 30))
+        self.dbs_Valor.setMaximumSize(QSize(16777215, 30))
 
         self.gridLayout.addWidget(self.dbs_Valor, 1, 8, 1, 1)
 
@@ -175,11 +177,15 @@ class Ui_Lancamento_Recargas(object):
 
         self.cmb_Colaboradores = QComboBox(self.frm_Inclusao_Itens)
         self.cmb_Colaboradores.setObjectName(u"cmb_Colaboradores")
+        self.cmb_Colaboradores.setMinimumSize(QSize(0, 30))
+        self.cmb_Colaboradores.setMaximumSize(QSize(16777215, 30))
 
         self.gridLayout.addWidget(self.cmb_Colaboradores, 0, 1, 1, 6)
 
         self.bt_Confirmar_Item = QPushButton(self.frm_Inclusao_Itens)
         self.bt_Confirmar_Item.setObjectName(u"bt_Confirmar_Item")
+        self.bt_Confirmar_Item.setMinimumSize(QSize(0, 30))
+        self.bt_Confirmar_Item.setMaximumSize(QSize(16777215, 30))
 
         self.gridLayout.addWidget(self.bt_Confirmar_Item, 1, 9, 1, 1)
 
