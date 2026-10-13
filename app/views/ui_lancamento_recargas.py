@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'lancamento_recargashHOMvL.ui'
+## Form generated from reading UI file 'lancamento_recargasjjAFnQ.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -15,16 +15,16 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QDateEdit, QDoubleSpinBox,
-    QFrame, QGridLayout, QHBoxLayout, QHeaderView,
-    QLabel, QLineEdit, QPushButton, QSizePolicy,
-    QSpacerItem, QTableView, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QDateEdit, QDoubleSpinBox, QFrame,
+    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
+    QPushButton, QSizePolicy, QSpacerItem, QTableView,
+    QVBoxLayout, QWidget)
 
 class Ui_Lancamento_Recargas(object):
     def setupUi(self, Lancamento_Recargas):
         if not Lancamento_Recargas.objectName():
             Lancamento_Recargas.setObjectName(u"Lancamento_Recargas")
-        Lancamento_Recargas.resize(819, 550)
+        Lancamento_Recargas.resize(819, 545)
         font = QFont()
         font.setFamilies([u"Segoe UI Semibold"])
         font.setPointSize(12)
@@ -118,76 +118,96 @@ class Ui_Lancamento_Recargas(object):
         self.frm_Inclusao_Itens.setObjectName(u"frm_Inclusao_Itens")
         self.frm_Inclusao_Itens.setFrameShape(QFrame.Shape.StyledPanel)
         self.frm_Inclusao_Itens.setFrameShadow(QFrame.Shadow.Raised)
-        self.gridLayout = QGridLayout(self.frm_Inclusao_Itens)
-        self.gridLayout.setSpacing(5)
-        self.gridLayout.setObjectName(u"gridLayout")
-        self.gridLayout.setContentsMargins(5, 5, 5, 5)
-        self.txt_Sem_Carga = QLineEdit(self.frm_Inclusao_Itens)
-        self.txt_Sem_Carga.setObjectName(u"txt_Sem_Carga")
-        self.txt_Sem_Carga.setMinimumSize(QSize(200, 30))
-        self.txt_Sem_Carga.setMaximumSize(QSize(200, 30))
+        self.verticalLayout_3 = QVBoxLayout(self.frm_Inclusao_Itens)
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setSpacing(5)
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.lb_Colaboradores = QLabel(self.frm_Inclusao_Itens)
+        self.lb_Colaboradores.setObjectName(u"lb_Colaboradores")
+        self.lb_Colaboradores.setMinimumSize(QSize(0, 30))
+        self.lb_Colaboradores.setMaximumSize(QSize(16777215, 30))
 
-        self.gridLayout.addWidget(self.txt_Sem_Carga, 1, 6, 1, 1)
+        self.horizontalLayout_6.addWidget(self.lb_Colaboradores)
 
-        self.lb_Sem_Carga = QLabel(self.frm_Inclusao_Itens)
-        self.lb_Sem_Carga.setObjectName(u"lb_Sem_Carga")
-        self.lb_Sem_Carga.setMinimumSize(QSize(0, 30))
-        self.lb_Sem_Carga.setMaximumSize(QSize(16777215, 30))
+        self.txt_Cod_Colaborador = QLineEdit(self.frm_Inclusao_Itens)
+        self.txt_Cod_Colaborador.setObjectName(u"txt_Cod_Colaborador")
+        self.txt_Cod_Colaborador.setMinimumSize(QSize(100, 30))
+        self.txt_Cod_Colaborador.setMaximumSize(QSize(100, 30))
 
-        self.gridLayout.addWidget(self.lb_Sem_Carga, 1, 5, 1, 1, Qt.AlignmentFlag.AlignRight)
+        self.horizontalLayout_6.addWidget(self.txt_Cod_Colaborador)
 
-        self.lb_Valor = QLabel(self.frm_Inclusao_Itens)
-        self.lb_Valor.setObjectName(u"lb_Valor")
-        self.lb_Valor.setMinimumSize(QSize(0, 30))
-        self.lb_Valor.setMaximumSize(QSize(16777215, 30))
+        self.bt_Pesquisar_Colaborador = QPushButton(self.frm_Inclusao_Itens)
+        self.bt_Pesquisar_Colaborador.setObjectName(u"bt_Pesquisar_Colaborador")
+        self.bt_Pesquisar_Colaborador.setMinimumSize(QSize(40, 30))
+        self.bt_Pesquisar_Colaborador.setMaximumSize(QSize(40, 30))
 
-        self.gridLayout.addWidget(self.lb_Valor, 1, 7, 1, 1, Qt.AlignmentFlag.AlignRight)
+        self.horizontalLayout_6.addWidget(self.bt_Pesquisar_Colaborador)
+
+        self.txt_Nome = QLineEdit(self.frm_Inclusao_Itens)
+        self.txt_Nome.setObjectName(u"txt_Nome")
+        self.txt_Nome.setMinimumSize(QSize(0, 30))
+        self.txt_Nome.setMaximumSize(QSize(16777215, 30))
+
+        self.horizontalLayout_6.addWidget(self.txt_Nome)
+
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_6)
+
+        self.horizontalLayout_7 = QHBoxLayout()
+        self.horizontalLayout_7.setSpacing(5)
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.lb_Carga = QLabel(self.frm_Inclusao_Itens)
+        self.lb_Carga.setObjectName(u"lb_Carga")
+        self.lb_Carga.setMinimumSize(QSize(0, 30))
+        self.lb_Carga.setMaximumSize(QSize(16777215, 30))
+
+        self.horizontalLayout_7.addWidget(self.lb_Carga)
 
         self.txt_Carga = QLineEdit(self.frm_Inclusao_Itens)
         self.txt_Carga.setObjectName(u"txt_Carga")
         self.txt_Carga.setMinimumSize(QSize(80, 30))
         self.txt_Carga.setMaximumSize(QSize(80, 30))
 
-        self.gridLayout.addWidget(self.txt_Carga, 1, 1, 1, 1)
+        self.horizontalLayout_7.addWidget(self.txt_Carga)
 
-        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.lb_Sem_Carga = QLabel(self.frm_Inclusao_Itens)
+        self.lb_Sem_Carga.setObjectName(u"lb_Sem_Carga")
+        self.lb_Sem_Carga.setMinimumSize(QSize(0, 30))
+        self.lb_Sem_Carga.setMaximumSize(QSize(16777215, 30))
 
-        self.gridLayout.addItem(self.horizontalSpacer_2, 1, 10, 1, 1)
+        self.horizontalLayout_7.addWidget(self.lb_Sem_Carga)
+
+        self.txt_Sem_Carga = QLineEdit(self.frm_Inclusao_Itens)
+        self.txt_Sem_Carga.setObjectName(u"txt_Sem_Carga")
+        self.txt_Sem_Carga.setMinimumSize(QSize(0, 30))
+        self.txt_Sem_Carga.setMaximumSize(QSize(16777215, 30))
+
+        self.horizontalLayout_7.addWidget(self.txt_Sem_Carga)
+
+        self.lb_Valor = QLabel(self.frm_Inclusao_Itens)
+        self.lb_Valor.setObjectName(u"lb_Valor")
+        self.lb_Valor.setMinimumSize(QSize(0, 30))
+        self.lb_Valor.setMaximumSize(QSize(16777215, 30))
+
+        self.horizontalLayout_7.addWidget(self.lb_Valor)
 
         self.dbs_Valor = QDoubleSpinBox(self.frm_Inclusao_Itens)
         self.dbs_Valor.setObjectName(u"dbs_Valor")
-        self.dbs_Valor.setMinimumSize(QSize(0, 30))
-        self.dbs_Valor.setMaximumSize(QSize(16777215, 30))
+        self.dbs_Valor.setMinimumSize(QSize(150, 30))
+        self.dbs_Valor.setMaximumSize(QSize(150, 30))
 
-        self.gridLayout.addWidget(self.dbs_Valor, 1, 8, 1, 1)
-
-        self.lb_Colaboradores = QLabel(self.frm_Inclusao_Itens)
-        self.lb_Colaboradores.setObjectName(u"lb_Colaboradores")
-        self.lb_Colaboradores.setMinimumSize(QSize(0, 30))
-        self.lb_Colaboradores.setMaximumSize(QSize(16777215, 30))
-
-        self.gridLayout.addWidget(self.lb_Colaboradores, 0, 0, 1, 1)
-
-        self.lb_Carga = QLabel(self.frm_Inclusao_Itens)
-        self.lb_Carga.setObjectName(u"lb_Carga")
-        self.lb_Carga.setMinimumSize(QSize(0, 30))
-        self.lb_Carga.setMaximumSize(QSize(16777215, 30))
-
-        self.gridLayout.addWidget(self.lb_Carga, 1, 0, 1, 1, Qt.AlignmentFlag.AlignRight)
-
-        self.cmb_Colaboradores = QComboBox(self.frm_Inclusao_Itens)
-        self.cmb_Colaboradores.setObjectName(u"cmb_Colaboradores")
-        self.cmb_Colaboradores.setMinimumSize(QSize(0, 30))
-        self.cmb_Colaboradores.setMaximumSize(QSize(16777215, 30))
-
-        self.gridLayout.addWidget(self.cmb_Colaboradores, 0, 1, 1, 6)
+        self.horizontalLayout_7.addWidget(self.dbs_Valor)
 
         self.bt_Confirmar_Item = QPushButton(self.frm_Inclusao_Itens)
         self.bt_Confirmar_Item.setObjectName(u"bt_Confirmar_Item")
         self.bt_Confirmar_Item.setMinimumSize(QSize(0, 30))
         self.bt_Confirmar_Item.setMaximumSize(QSize(16777215, 30))
 
-        self.gridLayout.addWidget(self.bt_Confirmar_Item, 1, 9, 1, 1)
+        self.horizontalLayout_7.addWidget(self.bt_Confirmar_Item)
+
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_7)
 
 
         self.verticalLayout.addWidget(self.frm_Inclusao_Itens)
@@ -323,11 +343,12 @@ class Ui_Lancamento_Recargas(object):
         self.bt_Novo.setText(QCoreApplication.translate("Lancamento_Recargas", u"+", None))
         self.lb_Data.setText(QCoreApplication.translate("Lancamento_Recargas", u"Data:", None))
         self.bt_Abrir_Recargas.setText(QCoreApplication.translate("Lancamento_Recargas", u"Abrir Recarga", None))
+        self.lb_Colaboradores.setText(QCoreApplication.translate("Lancamento_Recargas", u"Colaboradores:", None))
+        self.bt_Pesquisar_Colaborador.setText(QCoreApplication.translate("Lancamento_Recargas", u"...", None))
+        self.lb_Carga.setText(QCoreApplication.translate("Lancamento_Recargas", u"Carga:", None))
         self.lb_Sem_Carga.setText(QCoreApplication.translate("Lancamento_Recargas", u"Sem Carga:", None))
         self.lb_Valor.setText(QCoreApplication.translate("Lancamento_Recargas", u"Valor:", None))
         self.dbs_Valor.setPrefix(QCoreApplication.translate("Lancamento_Recargas", u"R$ ", None))
-        self.lb_Colaboradores.setText(QCoreApplication.translate("Lancamento_Recargas", u"Colaboradores:", None))
-        self.lb_Carga.setText(QCoreApplication.translate("Lancamento_Recargas", u"Carga:", None))
         self.bt_Confirmar_Item.setText(QCoreApplication.translate("Lancamento_Recargas", u"Confirmar", None))
         self.lb_Total.setText(QCoreApplication.translate("Lancamento_Recargas", u"Total:", None))
         self.bt_Limpar_Item.setText(QCoreApplication.translate("Lancamento_Recargas", u"Limpar", None))
