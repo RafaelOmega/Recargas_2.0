@@ -39,13 +39,13 @@ class PesquisaRecargasController(QDialog):
 
         self._modelo = QStandardItemModel(self)
         self._modelo.setHorizontalHeaderLabels(COLUNAS)
-        self.ui.tb_Recarga.setModel(self._modelo)
-        configurar_tabela(self.ui.tb_Recarga,
+        self.ui.tb_Recargas.setModel(self._modelo)
+        configurar_tabela(self.ui.tb_Recargas,
                           coluna_stretch=COLUNA_STRETCH, ordenavel=True)
-        self.ui.tb_Recarga.setEditTriggers(
-            self.ui.tb_Recarga.EditTrigger.NoEditTriggers)
+        self.ui.tb_Recargas.setEditTriggers(
+            self.ui.tb_Recargas.EditTrigger.NoEditTriggers)
         # ordenação padrão: coluna Sequência, ascendente
-        self.ui.tb_Recarga.sortByColumn(
+        self.ui.tb_Recargas.sortByColumn(
             COLUNA_PADRAO, Qt.SortOrder.AscendingOrder)
 
         self._timer_filtro = QTimer(self)
@@ -55,7 +55,7 @@ class PesquisaRecargasController(QDialog):
         self.ui.txt_Pesquisa.textChanged.connect(self._agendar_filtro)
         self.ui.bt_Pesquisa.clicked.connect(self._pesquisar)
         self.ui.txt_Pesquisa.returnPressed.connect(self._pesquisar)
-        self.ui.tb_Recarga.doubleClicked.connect(self.accept)
+        self.ui.tb_Recargas.doubleClicked.connect(self.accept)
 
         self._definir_tab_order()
 
@@ -70,7 +70,7 @@ class PesquisaRecargasController(QDialog):
     def _definir_tab_order(self):
         """Ordem de tabulação em modo Z: pesquisa -> Confirmar -> grade."""
         self.setTabOrder(self.ui.txt_Pesquisa, self.ui.bt_Pesquisa)
-        self.setTabOrder(self.ui.bt_Pesquisa, self.ui.tb_Recarga)
+        self.setTabOrder(self.ui.bt_Pesquisa, self.ui.tb_Recargas)
 
     def _agendar_filtro(self):
         self._timer_filtro.start(DEBOUNCE_MS)
@@ -95,10 +95,10 @@ class PesquisaRecargasController(QDialog):
             ])
         # garante a ordenação padrão por Sequência a cada recarga da grade
         self._modelo.sort(COLUNA_PADRAO, Qt.SortOrder.AscendingOrder)
-        ajustar_larguras(self.ui.tb_Recarga, coluna_stretch=COLUNA_STRETCH)
+        ajustar_larguras(self.ui.tb_Recargas, coluna_stretch=COLUNA_STRETCH)
 
     def recarga_selecionada(self) -> Recarga | None:
-        indice = self.ui.tb_Recarga.currentIndex()
+        indice = self.ui.tb_Recargas.currentIndex()
         if not indice.isValid():
             return None
         item = self._modelo.item(indice.row(), 0)

@@ -16,6 +16,9 @@ from PySide6.QtWidgets import QLabel, QMainWindow, QVBoxLayout, QWidget
 from app.controllers.cad_colaboradores_controller import (
     CadColaboradoresController,
 )
+from app.controllers.lancamento_recargas_controller import (
+    LancamentoRecargasController,
+)
 from app.utils.logger import get_logger
 from app.views.ui_main_window import Ui_MainWindow
 
@@ -26,6 +29,7 @@ logger = get_logger("main_window")
 # Ao adicionar/renomear actions no Designer, ajuste apenas este dicionário.
 _TELAS = {
     "colaboradores": ("actionCad_Colaboradores", "Colaboradores"),
+    "recargas": ("actionRecargas", "Lançamento de Recargas"),
 }
 
 
@@ -48,6 +52,8 @@ class MainWindowController(QMainWindow):
         logger.info("Janela principal iniciada")
 
         self._criadores["colaboradores"] = lambda pai: CadColaboradoresController(
+            pai)
+        self._criadores["recargas"] = lambda pai: LancamentoRecargasController(
             pai)
 
     # ---------------- configuração ----------------
@@ -74,7 +80,8 @@ class MainWindowController(QMainWindow):
             )
 
     def _iniciar_relogio(self):
-        if not hasattr(self.ui, "dt_Data_Atual") or not hasattr(self.ui, "dt_Hora_Atual"):
+        if not hasattr(self.ui, "dt_Data_Atual") or not hasattr(
+                self.ui, "dt_Hora_Atual"):
             logger.warning(
                 "Widgets de data/hora ausentes na UI — relógio desativado")
             return
@@ -120,8 +127,6 @@ class MainWindowController(QMainWindow):
             return criador(self)
 
         # Placeholder até a tela ter seu próprio controller.
-        # Exemplo de registro quando existir o controller real:
-        #   self._criadores["colaboradores"] = lambda pai: CadColaboradoresController(pai)
         widget = QWidget()
         layout = QVBoxLayout(widget)
         rotulo = QLabel(
