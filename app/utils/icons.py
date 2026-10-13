@@ -10,7 +10,7 @@ from app.utils.logger import get_logger
 logger = get_logger("icons")
 
 # Ícone principal do projeto (raiz do repositório)
-NOME_ICONE = "Omega-1.ico"
+NOME_ICONE = "Transport.ico"
 
 
 def _base_path() -> Path:
@@ -30,7 +30,8 @@ def caminho_icone(nome: str = NOME_ICONE) -> Path | None:
     base = _base_path()
 
     candidatos = [
-        base / nome,                # PyInstaller (--add-data "Omega-1.ico;.")
+        # PyInstaller (--add-data "Transport.ico;.")
+        base / nome,
         base / "assets" / nome,     # se um dia mover para assets/
         base / "app" / "assets" / nome,
     ]

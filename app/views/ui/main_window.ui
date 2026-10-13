@@ -18,7 +18,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Controle de Recargas e Abastecimento</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -206,6 +206,7 @@
      <string>Cadastros</string>
     </property>
     <addaction name="actionCad_Colaboradores"/>
+    <addaction name="actionSaldo_BIZ"/>
    </widget>
    <widget class="QMenu" name="menuLancamentos">
     <property name="title">
@@ -279,6 +280,11 @@
   <action name="actionRecargas">
    <property name="text">
     <string>Recargas</string>
+   </property>
+  </action>
+  <action name="actionSaldo_BIZ">
+   <property name="text">
+    <string>Saldo BIZ</string>
    </property>
   </action>
  </widget>
