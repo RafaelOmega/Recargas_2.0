@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'cad_colaboradoresEQcfHG.ui'
+## Form generated from reading UI file 'cad_colaboradoresbPqHLD.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -140,6 +140,10 @@ class Ui_Cad_Colaboradores(object):
         self.bt_Editar.setMaximumSize(QSize(16777215, 30))
 
         self.horizontalLayout_2.addWidget(self.bt_Editar)
+
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_3)
 
         self.bt_Limpar = QPushButton(self.frm_Crud)
         self.bt_Limpar.setObjectName(u"bt_Limpar")
