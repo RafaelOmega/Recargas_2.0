@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'main_windowLFgniC.ui'
+## Form generated from reading UI file 'main_windowDBFnRT.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -17,9 +17,9 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
 from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QDateEdit, QFrame,
-    QHBoxLayout, QLabel, QMainWindow, QMdiArea,
-    QMenu, QMenuBar, QSizePolicy, QSpacerItem,
-    QTimeEdit, QVBoxLayout, QWidget)
+    QHBoxLayout, QLabel, QLineEdit, QMainWindow,
+    QMdiArea, QMenu, QMenuBar, QSizePolicy,
+    QSpacerItem, QTimeEdit, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -28,7 +28,7 @@ class Ui_MainWindow(object):
         MainWindow.resize(1000, 600)
         font = QFont()
         font.setFamilies([u"Segoe UI Semibold"])
-        font.setPointSize(10)
+        font.setPointSize(12)
         font.setBold(True)
         MainWindow.setFont(font)
         self.actionCad_Colaboradores = QAction(MainWindow)
@@ -90,6 +90,21 @@ class Ui_MainWindow(object):
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
+
+        self.lb_Saldo_Conta = QLabel(self.frm_StatusBar)
+        self.lb_Saldo_Conta.setObjectName(u"lb_Saldo_Conta")
+        self.lb_Saldo_Conta.setMinimumSize(QSize(0, 30))
+        self.lb_Saldo_Conta.setMaximumSize(QSize(16777215, 30))
+
+        self.horizontalLayout.addWidget(self.lb_Saldo_Conta)
+
+        self.txt_Saldo_Conta = QLineEdit(self.frm_StatusBar)
+        self.txt_Saldo_Conta.setObjectName(u"txt_Saldo_Conta")
+        self.txt_Saldo_Conta.setMinimumSize(QSize(0, 30))
+        self.txt_Saldo_Conta.setMaximumSize(QSize(16777215, 30))
+        self.txt_Saldo_Conta.setReadOnly(True)
+
+        self.horizontalLayout.addWidget(self.txt_Saldo_Conta)
 
         self.dt_Data_Atual = QDateEdit(self.frm_StatusBar)
         self.dt_Data_Atual.setObjectName(u"dt_Data_Atual")
@@ -170,6 +185,7 @@ class Ui_MainWindow(object):
         self.actionSaldo_BIZ.setText(QCoreApplication.translate("MainWindow", u"Saldo BIZ", None))
         self.actionRecarga_Colaborador.setText(QCoreApplication.translate("MainWindow", u"Recarga por Colaborador", None))
         self.lb_Comandos.setText("")
+        self.lb_Saldo_Conta.setText(QCoreApplication.translate("MainWindow", u"Saldo Conta:", None))
         self.lb_Versao.setText(QCoreApplication.translate("MainWindow", u"Vers\u00e3o 2.0.0", None))
         self.menuCadastros.setTitle(QCoreApplication.translate("MainWindow", u"Cadastros", None))
         self.menuLancamentos.setTitle(QCoreApplication.translate("MainWindow", u"Lan\u00e7amentos", None))

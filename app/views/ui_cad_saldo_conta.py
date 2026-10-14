@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'cad_saldo_contadeLKAe.ui'
+## Form generated from reading UI file 'cad_saldo_contacPYJNr.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -23,7 +23,7 @@ class Ui_Cad_Saldo_Conta(object):
     def setupUi(self, Cad_Saldo_Conta):
         if not Cad_Saldo_Conta.objectName():
             Cad_Saldo_Conta.setObjectName(u"Cad_Saldo_Conta")
-        Cad_Saldo_Conta.resize(426, 136)
+        Cad_Saldo_Conta.resize(372, 136)
         font = QFont()
         font.setFamilies([u"Segoe UI Semibold"])
         font.setPointSize(12)
@@ -107,10 +107,6 @@ class Ui_Cad_Saldo_Conta(object):
 
         self.horizontalLayout_3.addWidget(self.dt_Data)
 
-        self.horizontalSpacer_3 = QSpacerItem(50, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_3.addItem(self.horizontalSpacer_3)
-
         self.lb_Valor = QLabel(self.frm_Corpo)
         self.lb_Valor.setObjectName(u"lb_Valor")
         self.lb_Valor.setMinimumSize(QSize(0, 30))
@@ -120,8 +116,8 @@ class Ui_Cad_Saldo_Conta(object):
 
         self.dbs_Valor = QDoubleSpinBox(self.frm_Corpo)
         self.dbs_Valor.setObjectName(u"dbs_Valor")
-        self.dbs_Valor.setMinimumSize(QSize(0, 30))
-        self.dbs_Valor.setMaximumSize(QSize(16777215, 30))
+        self.dbs_Valor.setMinimumSize(QSize(130, 30))
+        self.dbs_Valor.setMaximumSize(QSize(130, 30))
 
         self.horizontalLayout_3.addWidget(self.dbs_Valor)
 

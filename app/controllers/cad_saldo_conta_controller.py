@@ -10,10 +10,13 @@ Máquina de estados (padrão do cadastro de colaboradores):
   novo         -> campos liberados, Salvar grava (código automático)
   visualizacao -> registro carregado via pesquisa (somente leitura)
   edicao       -> "Editar" liberou os campos; Salvar atualiza
+
+Valor em QDoubleSpinBox (dbs_Valor, prefixo "R$ "): o widget já
+garante numérico com 2 decimais — não há texto a validar/converter.
 """
 from datetime import date
 
-from PySide6.QtCore import QDate, Qt
+from PySide6.QtCore import QDate, QLocale, Qt
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QMessageBox, QWidget
 
@@ -49,6 +52,12 @@ class CadSaldoContaController(QWidget):
             logger.warning(
                 "SaldoContaService nao encontrado - acoes desativadas")
 
+        # campo de valor: moeda com 2 decimais, formato pt-BR
+        self.ui.dbs_Valor.setDecimals(2)
+        self.ui.dbs_Valor.setRange(-999_999_999.99, 999_999_999.99)
+        self.ui.dbs_Valor.setLocale(
+            QLocale(QLocale.Portuguese, QLocale.Brazil))
+
         self._modo = ESTADO_INICIAL
 
         self._conectar_botoes()
@@ -76,7 +85,7 @@ class CadSaldoContaController(QWidget):
         """Ordem de tabulação em modo Z (esquerda->direita, cima->baixo).
 
         Linha 1 (frm_Codigo):  txt_Codigo -> bt_Pesquisar -> bt_Novo
-        Linha 2 (frm_Corpo):   dt_Data -> txt_Valor
+        Linha 2 (frm_Corpo):   dt_Data -> dbs_Valor
         Linha 3 (frm_Crud):    bt_Salvar -> bt_Editar -> bt_Limpar
                                -> bt_Excluir
         """
@@ -85,8 +94,8 @@ class CadSaldoContaController(QWidget):
         self.setTabOrder(self.ui.bt_Pesquisar_Saldo_Conta,
                          self.ui.bt_Novo)
         self.setTabOrder(self.ui.bt_Novo, self.ui.dt_Data)
-        self.setTabOrder(self.ui.dt_Data, self.ui.txt_Valor)
-        self.setTabOrder(self.ui.txt_Valor, self.ui.bt_Salvar)
+        self.setTabOrder(self.ui.dt_Data, self.ui.dbs_Valor)
+        self.setTabOrder(self.ui.dbs_Valor, self.ui.bt_Salvar)
         self.setTabOrder(self.ui.bt_Salvar, self.ui.bt_Editar)
         self.setTabOrder(self.ui.bt_Editar, self.ui.bt_Limpar)
         self.setTabOrder(self.ui.bt_Limpar, self.ui.bt_Excluir)
@@ -99,7 +108,7 @@ class CadSaldoContaController(QWidget):
         self.ui.bt_Novo.setEnabled(True)
 
         self.ui.dt_Data.setEnabled(False)
-        self.ui.txt_Valor.setEnabled(False)
+        self.ui.dbs_Valor.setEnabled(False)
         self.ui.bt_Salvar.setEnabled(False)
         self.ui.bt_Editar.setEnabled(False)
         self.ui.bt_Excluir.setEnabled(False)
@@ -109,7 +118,7 @@ class CadSaldoContaController(QWidget):
         self.ui.txt_Codigo.setEnabled(False)  # código é automático
         self.ui.txt_Codigo.clear()
         self.ui.dt_Data.setEnabled(True)
-        self.ui.txt_Valor.setEnabled(True)
+        self.ui.dbs_Valor.setEnabled(True)
         self.ui.bt_Salvar.setEnabled(True)
         self.ui.bt_Limpar.setEnabled(True)
         self.ui.bt_Editar.setEnabled(False)
@@ -120,7 +129,7 @@ class CadSaldoContaController(QWidget):
     def _estado_visualizacao(self):
         self.ui.txt_Codigo.setEnabled(False)
         self.ui.dt_Data.setEnabled(False)
-        self.ui.txt_Valor.setEnabled(False)
+        self.ui.dbs_Valor.setEnabled(False)
         self.ui.bt_Salvar.setEnabled(False)
         self.ui.bt_Novo.setEnabled(False)
         self.ui.bt_Pesquisar_Saldo_Conta.setEnabled(False)
@@ -131,7 +140,7 @@ class CadSaldoContaController(QWidget):
     def _estado_edicao(self):
         self.ui.txt_Codigo.setEnabled(False)  # código é a chave
         self.ui.dt_Data.setEnabled(True)
-        self.ui.txt_Valor.setEnabled(True)
+        self.ui.dbs_Valor.setEnabled(True)
         self.ui.bt_Salvar.setEnabled(True)
         self.ui.bt_Excluir.setEnabled(True)
         self.ui.bt_Limpar.setEnabled(True)
@@ -174,36 +183,22 @@ class CadSaldoContaController(QWidget):
         if saldo.data:
             self.ui.dt_Data.setDate(QDate(
                 saldo.data.year, saldo.data.month, saldo.data.day))
-        self.ui.txt_Valor.setText(_para_texto_valor(saldo.valor))
+        self.ui.dbs_Valor.setValue(saldo.valor)
         self._modo = ESTADO_VISUALIZACAO
         self._estado_visualizacao()
-
-    def _validar_obrigatorios(self) -> bool:
-        texto = self.ui.txt_Valor.text().strip()
-        if not texto:
-            QMessageBox.warning(self, "Atenção", "Informe o valor.")
-            self.ui.txt_Valor.setFocus()
-            return False
-        if _para_valor(texto) is None:
-            QMessageBox.warning(self, "Atenção", "Valor inválido.")
-            self.ui.txt_Valor.setFocus()
-            return False
-        return True
 
     def _coletar_dados(self) -> dict:
         qdata = self.ui.dt_Data.date()
         return {
             "codigo": self.ui.txt_Codigo.text().strip(),
             "data": date(qdata.year(), qdata.month(), qdata.day()),
-            "valor": _para_valor(self.ui.txt_Valor.text().strip()),
+            "valor": self.ui.dbs_Valor.value(),
         }
 
     def _salvar(self):
         if self._service is None:
             QMessageBox.critical(
                 self, "Erro", "Service de saldo da conta indisponível.")
-            return
-        if not self._validar_obrigatorios():
             return
 
         dados = self._coletar_dados()
@@ -261,32 +256,5 @@ class CadSaldoContaController(QWidget):
         self._modo = ESTADO_INICIAL
         self.ui.txt_Codigo.clear()
         self.ui.dt_Data.setDate(QDate.currentDate())
-        self.ui.txt_Valor.clear()
+        self.ui.dbs_Valor.setValue(0.0)
         self._estado_inicial()
-
-
-# ---------------- auxiliares ----------------
-
-def _para_valor(texto: str) -> float | None:
-    """Converte '1.234,56', '1234.56' ou '1234' em float."""
-    limpo = (texto or "").strip().replace("R$", "").strip()
-    if not limpo:
-        return None
-    negativo = limpo.startswith("-")
-    limpo = limpo.lstrip("+-").strip()
-    if "," in limpo:
-        inteiro, decimais = limpo.rsplit(",", 1)
-        inteiro = inteiro.replace(".", "").replace(" ", "")
-        limpo = f"{inteiro}.{decimais}"
-    try:
-        valor = float(limpo)
-    except ValueError:
-        return None
-    return -valor if negativo else valor
-
-
-def _para_texto_valor(valor: float) -> str:
-    """Float -> texto no padrão brasileiro (1234.5 -> '1.234,50')."""
-    texto = f"{abs(valor):,.2f}".replace(",", "X").replace(".", ",")
-    texto = texto.replace("X", ".")
-    return f"-{texto}" if valor < 0 else texto

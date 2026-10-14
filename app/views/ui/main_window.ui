@@ -13,7 +13,7 @@
   <property name="font">
    <font>
     <family>Segoe UI Semibold</family>
-    <pointsize>10</pointsize>
+    <pointsize>12</pointsize>
     <bold>true</bold>
    </font>
   </property>
@@ -95,6 +95,44 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="lb_Saldo_Conta">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>30</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>30</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Saldo Conta:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="txt_Saldo_Conta">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>30</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>30</height>
+          </size>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
        <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter">
         <widget class="QDateEdit" name="dt_Data_Atual">
