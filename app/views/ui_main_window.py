@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'main_windowxkUkoM.ui'
+## Form generated from reading UI file 'main_windowLFgniC.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -59,6 +59,8 @@ class Ui_MainWindow(object):
         self.actionRecargas.setObjectName(u"actionRecargas")
         self.actionSaldo_BIZ = QAction(MainWindow)
         self.actionSaldo_BIZ.setObjectName(u"actionSaldo_BIZ")
+        self.actionRecarga_Colaborador = QAction(MainWindow)
+        self.actionRecarga_Colaborador.setObjectName(u"actionRecarga_Colaborador")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
@@ -133,13 +135,17 @@ class Ui_MainWindow(object):
         self.menuCadastros.setObjectName(u"menuCadastros")
         self.menuLancamentos = QMenu(self.menubar)
         self.menuLancamentos.setObjectName(u"menuLancamentos")
+        self.menuRelatorios = QMenu(self.menubar)
+        self.menuRelatorios.setObjectName(u"menuRelatorios")
         MainWindow.setMenuBar(self.menubar)
 
         self.menubar.addAction(self.menuCadastros.menuAction())
         self.menubar.addAction(self.menuLancamentos.menuAction())
+        self.menubar.addAction(self.menuRelatorios.menuAction())
         self.menuCadastros.addAction(self.actionCad_Colaboradores)
         self.menuCadastros.addAction(self.actionSaldo_BIZ)
         self.menuLancamentos.addAction(self.actionRecargas)
+        self.menuRelatorios.addAction(self.actionRecarga_Colaborador)
 
         self.retranslateUi(MainWindow)
 
@@ -162,9 +168,11 @@ class Ui_MainWindow(object):
         self.actionRelEntradas.setText(QCoreApplication.translate("MainWindow", u"Entradas", None))
         self.actionRecargas.setText(QCoreApplication.translate("MainWindow", u"Recargas", None))
         self.actionSaldo_BIZ.setText(QCoreApplication.translate("MainWindow", u"Saldo BIZ", None))
+        self.actionRecarga_Colaborador.setText(QCoreApplication.translate("MainWindow", u"Recarga por Colaborador", None))
         self.lb_Comandos.setText("")
         self.lb_Versao.setText(QCoreApplication.translate("MainWindow", u"Vers\u00e3o 2.0.0", None))
         self.menuCadastros.setTitle(QCoreApplication.translate("MainWindow", u"Cadastros", None))
         self.menuLancamentos.setTitle(QCoreApplication.translate("MainWindow", u"Lan\u00e7amentos", None))
+        self.menuRelatorios.setTitle(QCoreApplication.translate("MainWindow", u"Relatorios", None))
     # retranslateUi
 
