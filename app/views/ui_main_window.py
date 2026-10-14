@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'main_windowDBFnRT.ui'
+## Form generated from reading UI file 'main_windowZGNJRj.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -100,8 +100,8 @@ class Ui_MainWindow(object):
 
         self.txt_Saldo_Conta = QLineEdit(self.frm_StatusBar)
         self.txt_Saldo_Conta.setObjectName(u"txt_Saldo_Conta")
-        self.txt_Saldo_Conta.setMinimumSize(QSize(0, 30))
-        self.txt_Saldo_Conta.setMaximumSize(QSize(16777215, 30))
+        self.txt_Saldo_Conta.setMinimumSize(QSize(120, 30))
+        self.txt_Saldo_Conta.setMaximumSize(QSize(120, 30))
         self.txt_Saldo_Conta.setReadOnly(True)
 
         self.horizontalLayout.addWidget(self.txt_Saldo_Conta)

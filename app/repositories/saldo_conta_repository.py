@@ -67,6 +67,27 @@ class SaldoContaRepository:
 
     # ---------------- leitura ----------------
 
+    def saldo_atual(self) -> float:
+        """Saldo da conta: soma dos saldos - soma das recargas.
+
+        Uma única consulta: diferença entre o total dos lançamentos
+        de saldo (cargas na conta) e o total lançado nos itens de
+        recarga (consumo).
+        """
+        with self._conn:
+            with self._conn.cursor() as cur:
+                cur.execute(
+                    "SELECT "
+                    "(SELECT COALESCE(SUM(valor), 0) "
+                    "       FROM saldo_conta) "
+                    "- (SELECT COALESCE(SUM(valor), 0) "
+                    "       FROM recargas_itens)"
+                )
+                linha = cur.fetchone()
+        saldo = float(linha[0] or 0) if linha else 0.0
+        logger.info("Saldo da conta calculado: %s", saldo)
+        return saldo
+
     def buscar_por_codigo(self, codigo: str) -> SaldoConta | None:
         with self._conn:
             with self._conn.cursor() as cur:

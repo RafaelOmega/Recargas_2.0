@@ -2,7 +2,7 @@
 """Controller da janela principal (MDI) do sistema Recargas.
 
 Responsabilidade: montar a UI, ligar as ações do menu às subjanelas
-do QMdiArea e manter data/hora na barra de status.
+do QMdiArea e manter data/hora e o saldo da conta na barra de status.
 
 Cada tela é uma chave em _TELAS; a factory do seu controller é
 registrada em _criadores. Enquanto o controller real não existir,
@@ -28,6 +28,11 @@ from app.controllers.relatorio_recarga_colaborador_controller import (
 from app.utils.logger import get_logger
 from app.views.ui_main_window import Ui_MainWindow
 
+try:
+    from app.services.saldo_conta_service import SaldoContaService
+except ImportError:
+    SaldoContaService = None
+
 logger = get_logger("main_window")
 
 # chave -> (nome do QAction na UI, título da janela)
@@ -40,6 +45,17 @@ _TELAS = {
     "rel_recarga_colaborador": ("actionRecarga_Colaborador",
                                 "Recarga por Colaborador"),
 }
+
+# intervalo de atualização automática do saldo da conta (30 s)
+INTERVALO_SALDO_MS = 30_000
+
+
+def _formatar_moeda(valor: float) -> str:
+    """Float -> 'R$ 1.234,56' (padrão brasileiro, sinal na frente)."""
+    texto = f"{abs(valor):,.2f}".replace(",", "X").replace(".", ",")
+    texto = texto.replace("X", ".")
+    sinal = "-" if valor < 0 else ""
+    return f"{sinal}R$ {texto}"
 
 
 class MainWindowController(QMainWindow):
@@ -54,9 +70,13 @@ class MainWindowController(QMainWindow):
         self._criadores = {}   # chave -> factory do controller da tela
         self._subjanelas = {}  # chave -> QMdiSubWindow aberta
 
+        self._service_saldo = (SaldoContaService()
+                               if SaldoContaService else None)
+
         self._configurar_status_bar()
         self._conectar_acoes()
         self._iniciar_relogio()
+        self._iniciar_atualizacao_saldo()
 
         logger.info("Janela principal iniciada")
 
@@ -109,8 +129,38 @@ class MainWindowController(QMainWindow):
         self.ui.dt_Hora_Atual.setTime(
             QTime(agora.hour, agora.minute, agora.second))
 
+    # ---------------- saldo da conta (barra de status) ----------------
+
+    def _iniciar_atualizacao_saldo(self):
+        """Saldo na abertura + refresh periódico (cobre multiusuário)."""
+        if not hasattr(self.ui, "txt_Saldo_Conta"):
+            logger.warning(
+                "txt_Saldo_Conta ausente na UI — saldo desativado")
+            return
+        self._atualizar_saldo_conta()
+        self._timer_saldo = QTimer(self)
+        self._timer_saldo.timeout.connect(self._atualizar_saldo_conta)
+        self._timer_saldo.start(INTERVALO_SALDO_MS)
+
+    def _atualizar_saldo_conta(self):
+        """Saldo da conta Biz = soma das recargas - soma dos saldos."""
+        if self._service_saldo is None:
+            self.ui.txt_Saldo_Conta.setText("—")
+            return
+        try:
+            saldo = self._service_saldo.saldo_atual()
+        except Exception:
+            logger.exception("Falha ao calcular o saldo da conta")
+            self.ui.txt_Saldo_Conta.setText("—")
+            return
+        self.ui.txt_Saldo_Conta.setText(_formatar_moeda(saldo))
+        # negativo destacado em vermelho
+        self.ui.txt_Saldo_Conta.setStyleSheet(
+            "color: #C0392B;" if saldo < 0 else "")
+
     def _ao_ativar_subjanela(self, sub):
-        pass  # ponto de extensão (ex.: limpar lb_Comandos)
+        # ao voltar/focus de uma subjanela (ex.: após salvar), atualiza
+        self._atualizar_saldo_conta()
 
     # ---------------- abertura de telas ----------------
 

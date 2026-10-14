@@ -119,13 +119,13 @@
         <widget class="QLineEdit" name="txt_Saldo_Conta">
          <property name="minimumSize">
           <size>
-           <width>0</width>
+           <width>120</width>
            <height>30</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>16777215</width>
+           <width>120</width>
            <height>30</height>
           </size>
          </property>

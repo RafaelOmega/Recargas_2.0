@@ -25,6 +25,10 @@ class SaldoContaService:
     def excluir(self, codigo: str) -> bool:
         return self._repo.excluir(codigo)
 
+    def saldo_atual(self) -> float:
+        """Saldo da conta Biz: soma das recargas - soma dos saldos."""
+        return self._repo.saldo_atual()
+
     def buscar_por_codigo(self, codigo: str) -> SaldoConta | None:
         return self._repo.buscar_por_codigo(codigo)
 
