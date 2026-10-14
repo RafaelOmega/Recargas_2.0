@@ -19,6 +19,9 @@ from app.controllers.cad_colaboradores_controller import (
 from app.controllers.lancamento_recargas_controller import (
     LancamentoRecargasController,
 )
+from app.controllers.relatorio_recarga_colaborador_controller import (
+    RelRecargaColaboradorController,
+)
 from app.utils.logger import get_logger
 from app.views.ui_main_window import Ui_MainWindow
 
@@ -30,6 +33,8 @@ logger = get_logger("main_window")
 _TELAS = {
     "colaboradores": ("actionCad_Colaboradores", "Colaboradores"),
     "recargas": ("actionRecargas", "Lançamento de Recargas"),
+    "rel_recarga_colaborador": ("actionRecarga_Colaborador",
+                                "Recarga por Colaborador"),
 }
 
 
@@ -55,6 +60,8 @@ class MainWindowController(QMainWindow):
             pai)
         self._criadores["recargas"] = lambda pai: LancamentoRecargasController(
             pai)
+        self._criadores["rel_recarga_colaborador"] = lambda pai: (
+            RelRecargaColaboradorController(pai))
 
     # ---------------- configuração ----------------
 
