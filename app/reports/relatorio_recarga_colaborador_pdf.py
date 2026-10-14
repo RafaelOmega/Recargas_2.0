@@ -4,9 +4,9 @@
 Mesmo layout da pré-visualização (o HTML é compartilhado). PDF via Qt
 (QTextDocument + QPrinter) — sem dependências extras.
 
-Itens agrupados por colaborador (ordem alfabética). Com mais de um
-colaborador no resultado, exibe SUBTOTAL após cada grupo e o TOTAL
-GERAL no fim; com um só colaborador, apenas o total.
+Cada colaborador vira um BLOCO separado: barra azul com o NOME no topo,
+tabela com os itens e linha de SUBTOTAL no fim do bloco. Com mais de
+um colaborador, o TOTAL GERAL vem depois do último bloco.
 """
 from datetime import datetime
 
@@ -26,8 +26,8 @@ TEXTO = "#222222"
 SUBTOTAL = "#E8EDF2"
 TOTAL_GERAL = "#DCE4EE"
 
-_CABECALHOS = ["Data", "Seq", "Colaborador", "CPF", "Carga",
-               "Sem Carga", "Valor", "Benefício"]
+_CABECALHOS = ["Data", "Seq", "CPF", "Carga", "Sem Carga", "Valor",
+               "Benefício"]
 
 
 def _moeda(valor: float | None) -> str:
@@ -79,9 +79,33 @@ def html_relatorio(registros: list[ItemRecargaRelatorio],
         return "".join(partes)
 
     grupos = _agrupar_por_colaborador(registros)
-    mostrar_subtotais = len(grupos) > 1
+    for nome, itens in grupos:
+        partes.append(_html_bloco(nome, itens))
 
-    partes += [
+    if len(grupos) > 1:
+        total = sum(r.valor for r in registros)
+        partes.append(
+            "<table width='100%' cellspacing='0' cellpadding='4' "
+            f"style='border:1px solid {LINHA};font-size:9pt;"
+            f"color:{TEXTO};border-collapse:collapse;'>"
+            "<tr style='background-color:" + TOTAL_GERAL +
+            ";font-weight:bold;" + f"color:{AZUL};'>"
+            f"<td colspan='5'>Total geral — {len(registros)} item(ns)</td>"
+            f"<td align='right'>{_moeda(total)}</td>"
+            "<td></td></tr></table>")
+    return "".join(partes)
+
+
+def _html_bloco(nome: str, itens: list[ItemRecargaRelatorio]) -> str:
+    """Bloco de um colaborador: nome no topo + itens + subtotal."""
+    documento = next((r.documento for r in itens if r.documento), "")
+    doc_cabecalho = _formatar_documento(documento)
+    titulo = f"{nome} · CPF {doc_cabecalho}" if doc_cabecalho else nome
+
+    html = [
+        "<table width='100%' cellspacing='0' cellpadding='0'>"
+        f"<tr><td style='background-color:{AZUL};color:#FFFFFF;"
+        "padding:6px 8px;font-size:10pt;'>" + titulo + "</td></tr></table>",
         "<table width='100%' cellspacing='0' cellpadding='4' "
         f"style='border:1px solid {LINHA};font-size:9pt;color:{TEXTO};"
         "border-collapse:collapse;'>",
@@ -89,37 +113,26 @@ def html_relatorio(registros: list[ItemRecargaRelatorio],
         + "".join(f"<th align='left'>{c}</th>" for c in _CABECALHOS)
         + "</tr>",
     ]
-    for nome, itens in grupos:
-        for indice, r in enumerate(itens):
-            fundo = ZEBRA if indice % 2 else "#FFFFFF"
-            partes.append(
-                f"<tr style='background-color:{fundo};'>"
-                f"<td>{r.data.strftime('%d/%m/%Y') if r.data else '—'}</td>"
-                f"<td>{r.sequencia}</td>"
-                f"<td>{r.nome}</td>"
-                f"<td>{_formatar_documento(r.documento)}</td>"
-                f"<td>{r.carga}</td>"
-                f"<td>{r.sem_carga}</td>"
-                f"<td align='right'>{_moeda(r.valor)}</td>"
-                f"<td>{r.beneficio}</td>"
-                "</tr>")
-        if mostrar_subtotais:
-            subtotal = sum(r.valor for r in itens)
-            partes.append(
-                "<tr style='background-color:" + SUBTOTAL +
-                ";font-weight:bold;" + f"color:{TEXTO};'>"
-                f"<td colspan='6'>Subtotal — {nome} "
-                f"({len(itens)} item(ns))</td>"
-                f"<td align='right'>{_moeda(subtotal)}</td>"
-                "<td></td></tr>")
-    total = sum(r.valor for r in registros)
-    partes.append(
-        "<tr style='background-color:" + TOTAL_GERAL +
-        ";font-weight:bold;" + f"color:{AZUL};'>"
-        f"<td colspan='6'>Totais — {len(registros)} item(ns)</td>"
-        f"<td align='right'>{_moeda(total)}</td>"
-        "<td></td></tr></table>")
-    return "".join(partes)
+    for indice, r in enumerate(itens):
+        fundo = ZEBRA if indice % 2 else "#FFFFFF"
+        html.append(
+            f"<tr style='background-color:{fundo};'>"
+            f"<td>{r.data.strftime('%d/%m/%Y') if r.data else '—'}</td>"
+            f"<td>{r.sequencia}</td>"
+            f"<td>{_formatar_documento(r.documento)}</td>"
+            f"<td>{r.carga}</td>"
+            f"<td>{r.sem_carga}</td>"
+            f"<td align='right'>{_moeda(r.valor)}</td>"
+            f"<td>{r.beneficio}</td>"
+            "</tr>")
+    subtotal = sum(r.valor for r in itens)
+    html.append(
+        "<tr style='background-color:" + SUBTOTAL +
+        ";font-weight:bold;" + f"color:{TEXTO};'>"
+        f"<td colspan='5'>Subtotal ({len(itens)} item(ns))</td>"
+        f"<td align='right'>{_moeda(subtotal)}</td>"
+        "<td></td></tr></table><br>")
+    return "".join(html)
 
 
 def gerar_pdf_recarga_colaborador(registros: list[ItemRecargaRelatorio],
