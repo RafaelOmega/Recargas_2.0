@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'relatorio_recarga_colaboradorevzkmo.ui'
+## Form generated from reading UI file 'relatorio_recarga_colaboradorDspilD.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -23,7 +23,7 @@ class Ui_Rel_Recarga_Colaborador(object):
     def setupUi(self, Rel_Recarga_Colaborador):
         if not Rel_Recarga_Colaborador.objectName():
             Rel_Recarga_Colaborador.setObjectName(u"Rel_Recarga_Colaborador")
-        Rel_Recarga_Colaborador.resize(492, 147)
+        Rel_Recarga_Colaborador.resize(500, 136)
         font = QFont()
         font.setFamilies([u"Segoe UI Semibold"])
         font.setPointSize(12)
@@ -32,7 +32,7 @@ class Ui_Rel_Recarga_Colaborador(object):
         self.horizontalLayout = QHBoxLayout(Rel_Recarga_Colaborador)
         self.horizontalLayout.setSpacing(5)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.horizontalLayout.setContentsMargins(5, 5, 5, 5)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.frm_Relatorio = QFrame(Rel_Recarga_Colaborador)
         self.frm_Relatorio.setObjectName(u"frm_Relatorio")
         self.frm_Relatorio.setFrameShape(QFrame.Shape.StyledPanel)
@@ -51,22 +51,30 @@ class Ui_Rel_Recarga_Colaborador(object):
         self.horizontalLayout_3.setContentsMargins(5, 5, 5, 5)
         self.lb_Data_Inicial = QLabel(self.frm_Data)
         self.lb_Data_Inicial.setObjectName(u"lb_Data_Inicial")
+        self.lb_Data_Inicial.setMinimumSize(QSize(0, 30))
+        self.lb_Data_Inicial.setMaximumSize(QSize(16777215, 30))
 
         self.horizontalLayout_3.addWidget(self.lb_Data_Inicial)
 
         self.dt_Data_Inicial = QDateEdit(self.frm_Data)
         self.dt_Data_Inicial.setObjectName(u"dt_Data_Inicial")
+        self.dt_Data_Inicial.setMinimumSize(QSize(150, 30))
+        self.dt_Data_Inicial.setMaximumSize(QSize(150, 30))
         self.dt_Data_Inicial.setCalendarPopup(True)
 
         self.horizontalLayout_3.addWidget(self.dt_Data_Inicial)
 
         self.lb_Data_Final = QLabel(self.frm_Data)
         self.lb_Data_Final.setObjectName(u"lb_Data_Final")
+        self.lb_Data_Final.setMinimumSize(QSize(0, 30))
+        self.lb_Data_Final.setMaximumSize(QSize(16777215, 30))
 
         self.horizontalLayout_3.addWidget(self.lb_Data_Final)
 
         self.dt_Data_Final = QDateEdit(self.frm_Data)
         self.dt_Data_Final.setObjectName(u"dt_Data_Final")
+        self.dt_Data_Final.setMinimumSize(QSize(150, 30))
+        self.dt_Data_Final.setMaximumSize(QSize(150, 30))
         self.dt_Data_Final.setCalendarPopup(True)
 
         self.horizontalLayout_3.addWidget(self.dt_Data_Final)

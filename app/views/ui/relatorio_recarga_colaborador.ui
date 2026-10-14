@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>492</width>
-    <height>147</height>
+    <width>500</width>
+    <height>136</height>
    </rect>
   </property>
   <property name="font">
@@ -25,16 +25,16 @@
     <number>5</number>
    </property>
    <property name="leftMargin">
-    <number>5</number>
+    <number>0</number>
    </property>
    <property name="topMargin">
-    <number>5</number>
+    <number>0</number>
    </property>
    <property name="rightMargin">
-    <number>5</number>
+    <number>0</number>
    </property>
    <property name="bottomMargin">
-    <number>5</number>
+    <number>0</number>
    </property>
    <item>
     <widget class="QFrame" name="frm_Relatorio">
@@ -86,6 +86,18 @@
          </property>
          <item>
           <widget class="QLabel" name="lb_Data_Inicial">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>30</height>
+            </size>
+           </property>
            <property name="text">
             <string>Data Inicial:</string>
            </property>
@@ -93,6 +105,18 @@
          </item>
          <item>
           <widget class="QDateEdit" name="dt_Data_Inicial">
+           <property name="minimumSize">
+            <size>
+             <width>150</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>150</width>
+             <height>30</height>
+            </size>
+           </property>
            <property name="calendarPopup">
             <bool>true</bool>
            </property>
@@ -100,6 +124,18 @@
          </item>
          <item>
           <widget class="QLabel" name="lb_Data_Final">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>30</height>
+            </size>
+           </property>
            <property name="text">
             <string>Data Final:</string>
            </property>
@@ -107,6 +143,18 @@
          </item>
          <item>
           <widget class="QDateEdit" name="dt_Data_Final">
+           <property name="minimumSize">
+            <size>
+             <width>150</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>150</width>
+             <height>30</height>
+            </size>
+           </property>
            <property name="calendarPopup">
             <bool>true</bool>
            </property>

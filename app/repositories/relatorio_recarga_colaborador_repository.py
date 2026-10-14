@@ -13,23 +13,39 @@ class RelatorioRecargaColaboradorRepository:
         self._conn = conn or get_connection()
 
     def itens_por_colaborador(self, nome: str = "",
-                              documento: str = ""
+                              documento: str = "",
+                              data_inicial=None,
+                              data_final=None
                               ) -> list[ItemRecargaRelatorio]:
         """Itens de recarga de um colaborador, em ordem cronológica.
 
-        Filtro prioriza o documento (apenas dígitos) quando informado;
-        senão, correspondência parcial no nome do item.
+        Filtro de colaborador prioriza o documento (apenas dígitos)
+        quando informado; senão, correspondência parcial no nome do
+        item. Período opcional restringe pela data da recarga
+        (inclusivo nas duas pontas).
         """
+        clausulas: list[str] = []
+        params: list = []
+
         doc = "".join(c for c in (documento or "") if c.isdigit())
         if doc:
-            where = ("regexp_replace(ri.documento, '[^0-9]', '', 'g')"
-                     " = %s")
-            params: tuple = (doc,)
+            clausulas.append(
+                "regexp_replace(ri.documento, '[^0-9]', '', 'g') = %s")
+            params.append(doc)
         elif nome:
-            where = "ri.nome ILIKE %s"
-            params = (f"%{nome}%",)
+            clausulas.append("ri.nome ILIKE %s")
+            params.append(f"%{nome}%")
         else:
             return []
+
+        if data_inicial is not None:
+            clausulas.append("r.data >= %s")
+            params.append(data_inicial)
+        if data_final is not None:
+            clausulas.append("r.data <= %s")
+            params.append(data_final)
+
+        where = " AND ".join(clausulas)
         with self._conn:
             with self._conn.cursor() as cur:
                 cur.execute(
@@ -40,7 +56,7 @@ class RelatorioRecargaColaboradorRepository:
                     "JOIN recargas r ON r.id = ri.recarga_id "
                     f"WHERE {where} "
                     "ORDER BY r.data, r.sequencia, ri.nome",
-                    params,
+                    tuple(params),
                 )
                 registros = [
                     ItemRecargaRelatorio(

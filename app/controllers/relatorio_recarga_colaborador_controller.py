@@ -5,6 +5,9 @@ Responsabilidade: APENAS controle de tela (filtros, botões).
 Ao filtrar, abre a pré-visualização (mesmo layout do PDF), de onde
 o usuário gera PDF, XLSX ou CSV. Dados via
 RelatorioRecargaColaboradorService.
+
+Filtros: período (data inicial/final) + colaborador (nome livre ou
+selecionado na pesquisa de colaboradores via "...").
 """
 from PySide6.QtWidgets import QMessageBox, QWidget
 
@@ -37,6 +40,17 @@ class RelRecargaColaboradorController(QWidget):
             self._colaborador_digitado)
         self.ui.bt_Filtrar.clicked.connect(self._gerar_relatorio)
 
+        self._definir_tab_order()
+
+    def _definir_tab_order(self):
+        """Ordem de tabulação em modo Z (esquerda→direita, cima→baixo)."""
+        self.setTabOrder(self.ui.dt_Data_Inicial, self.ui.dt_Data_Final)
+        self.setTabOrder(self.ui.dt_Data_Final, self.ui.txt_Colaborador)
+        self.setTabOrder(self.ui.txt_Colaborador,
+                         self.ui.bt_Pesquisar_Colaborador)
+        self.setTabOrder(self.ui.bt_Pesquisar_Colaborador,
+                         self.ui.bt_Filtrar)
+
     # ---------------- filtros ----------------
 
     def _colaborador_digitado(self):
@@ -65,9 +79,20 @@ class RelRecargaColaboradorController(QWidget):
             QMessageBox.warning(self, "Relatório", "Informe o colaborador.")
             self.ui.txt_Colaborador.setFocus()
             return
+
+        data_inicial = self.ui.dt_Data_Inicial.date().toPyDate()
+        data_final = self.ui.dt_Data_Final.date().toPyDate()
+        if data_inicial > data_final:
+            QMessageBox.warning(
+                self, "Relatório",
+                "Data inicial maior que a data final.")
+            self.ui.dt_Data_Inicial.setFocus()
+            return
+
         try:
             registros = self._service.itens_por_colaborador(
-                nome=nome, documento=documento)
+                nome=nome, documento=documento,
+                data_inicial=data_inicial, data_final=data_final)
         except Exception as exc:
             QMessageBox.critical(self, "Relatório", self._mensagem_erro(exc))
             return
@@ -75,7 +100,8 @@ class RelRecargaColaboradorController(QWidget):
         if not registros:
             QMessageBox.information(
                 self, "Relatório",
-                "Nenhum item de recarga encontrado para este colaborador.")
+                "Nenhum item de recarga encontrado para este colaborador "
+                "no período informado.")
             return
 
         # pré-visualização: mesmo layout do PDF, com PDF/XLSX/CSV
@@ -83,16 +109,22 @@ class RelRecargaColaboradorController(QWidget):
             RelRecargaColaboradorPreviewController,
         )
         dialogo = RelRecargaColaboradorPreviewController(
-            registros, self._subtitulo(nome, documento), self)
+            registros, self._subtitulo(nome, documento,
+                                       data_inicial, data_final), self)
         dialogo.exec()
 
     @staticmethod
-    def _subtitulo(nome: str, documento: str) -> str:
+    def _subtitulo(nome: str, documento: str,
+                   data_inicial, data_final) -> str:
         doc = "".join(c for c in (documento or "") if c.isdigit())
         if len(doc) == 11:
-            return (f"Colaborador: {nome} "
-                    f"(CPF {doc[:3]}.{doc[3:6]}.{doc[6:9]}-{doc[9:]})")
-        return f"Colaborador: {nome}"
+            colaborador = (f"Colaborador: {nome} "
+                           f"(CPF {doc[:3]}.{doc[3:6]}.{doc[6:9]}-{doc[9:]})")
+        else:
+            colaborador = f"Colaborador: {nome}"
+        periodo = (f"Período: {data_inicial.strftime('%d/%m/%Y')} a "
+                   f"{data_final.strftime('%d/%m/%Y')}")
+        return f"{colaborador}    {periodo}"
 
     # ---------------- mensagens ----------------
 

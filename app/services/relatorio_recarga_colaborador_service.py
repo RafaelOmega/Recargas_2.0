@@ -15,8 +15,14 @@ class RelatorioRecargaColaboradorService:
         self._repo = RelatorioRecargaColaboradorRepository()
 
     def itens_por_colaborador(self, nome: str = "",
-                              documento: str = ""
+                              documento: str = "",
+                              data_inicial=None,
+                              data_final=None
                               ) -> list[ItemRecargaRelatorio]:
-        """Dados prontos para o relatório (PDF/XLSX/CSV)."""
-        return self._repo.itens_por_colaborador(nome.strip(),
-                                                documento.strip())
+        """Dados prontos para o relatório (PDF/XLSX/CSV).
+
+        Período opcional: quando informado, restringe pela data da
+        recarga (inclusivo nas duas pontas).
+        """
+        return self._repo.itens_por_colaborador(
+            nome.strip(), documento.strip(), data_inicial, data_final)
