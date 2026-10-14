@@ -16,6 +16,9 @@ from PySide6.QtWidgets import QLabel, QMainWindow, QVBoxLayout, QWidget
 from app.controllers.cad_colaboradores_controller import (
     CadColaboradoresController,
 )
+from app.controllers.cad_saldo_conta_controller import (
+    CadSaldoContaController,
+)
 from app.controllers.lancamento_recargas_controller import (
     LancamentoRecargasController,
 )
@@ -33,6 +36,7 @@ logger = get_logger("main_window")
 _TELAS = {
     "colaboradores": ("actionCad_Colaboradores", "Colaboradores"),
     "recargas": ("actionRecargas", "Lançamento de Recargas"),
+    "saldo_biz": ("actionSaldo_BIZ", "Saldo BIZ"),
     "rel_recarga_colaborador": ("actionRecarga_Colaborador",
                                 "Recarga por Colaborador"),
 }
@@ -59,6 +63,8 @@ class MainWindowController(QMainWindow):
         self._criadores["colaboradores"] = lambda pai: CadColaboradoresController(
             pai)
         self._criadores["recargas"] = lambda pai: LancamentoRecargasController(
+            pai)
+        self._criadores["saldo_biz"] = lambda pai: CadSaldoContaController(
             pai)
         self._criadores["rel_recarga_colaborador"] = lambda pai: (
             RelRecargaColaboradorController(pai))

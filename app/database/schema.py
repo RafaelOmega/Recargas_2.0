@@ -8,6 +8,7 @@ CREATE ... IF NOT EXISTS, portanto em banco já existente nada
 Números automáticos vêm de SEQUENCEs do PostgreSQL:
   - seq_colaboradores_codigo -> colaboradores.codigo
   - seq_recargas_sequencia   -> recargas.sequencia
+  - seq_saldo_conta_codigo   -> saldo_conta.codigo
 eliminando a race condition do MAX()+1 em uso multiusuário.
 Cada sequência é sincronizada com o maior valor já gravado
 (idempotente).
@@ -98,6 +99,37 @@ _COMANDOS = (
     """
     CREATE INDEX IF NOT EXISTS idx_recargas_itens_recarga
         ON recargas_itens (recarga_id)
+    """,
+    # ---------------- saldo_conta (conta Biz) ----------------
+    """
+    CREATE TABLE IF NOT EXISTS saldo_conta (
+        id     SERIAL PRIMARY KEY,
+        codigo VARCHAR(20) UNIQUE NOT NULL,
+        data   DATE NOT NULL,
+        valor  NUMERIC(12,2) NOT NULL DEFAULT 0
+    )
+    """,
+    """
+    CREATE SEQUENCE IF NOT EXISTS seq_saldo_conta_codigo
+        START WITH 1
+        INCREMENT BY 1
+        NO MINVALUE
+        NO MAXVALUE
+        NO CYCLE
+    """,
+    """
+    DO $$
+    DECLARE
+        v_max INTEGER;
+    BEGIN
+        SELECT COALESCE(MAX(CAST(codigo AS INTEGER)), 0)
+          INTO v_max
+          FROM saldo_conta
+         WHERE codigo ~ '^[0-9]+$';
+        IF v_max > 0 THEN
+            PERFORM setval('seq_saldo_conta_codigo', v_max, true);
+        END IF;
+    END $$
     """,
 )
 

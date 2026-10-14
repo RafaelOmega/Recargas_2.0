@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'cad_saldo_contawyDODk.ui'
+## Form generated from reading UI file 'cad_saldo_contadeLKAe.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -15,15 +15,15 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QDateEdit, QFrame, QHBoxLayout,
-    QLabel, QLineEdit, QPushButton, QSizePolicy,
-    QSpacerItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QDateEdit, QDoubleSpinBox, QFrame,
+    QHBoxLayout, QLabel, QLineEdit, QPushButton,
+    QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
 class Ui_Cad_Saldo_Conta(object):
     def setupUi(self, Cad_Saldo_Conta):
         if not Cad_Saldo_Conta.objectName():
             Cad_Saldo_Conta.setObjectName(u"Cad_Saldo_Conta")
-        Cad_Saldo_Conta.resize(441, 136)
+        Cad_Saldo_Conta.resize(426, 136)
         font = QFont()
         font.setFamilies([u"Segoe UI Semibold"])
         font.setPointSize(12)
@@ -101,11 +101,15 @@ class Ui_Cad_Saldo_Conta(object):
 
         self.dt_Data = QDateEdit(self.frm_Corpo)
         self.dt_Data.setObjectName(u"dt_Data")
-        self.dt_Data.setMinimumSize(QSize(0, 30))
-        self.dt_Data.setMaximumSize(QSize(16777215, 30))
+        self.dt_Data.setMinimumSize(QSize(130, 30))
+        self.dt_Data.setMaximumSize(QSize(130, 30))
         self.dt_Data.setCalendarPopup(True)
 
         self.horizontalLayout_3.addWidget(self.dt_Data)
+
+        self.horizontalSpacer_3 = QSpacerItem(50, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_3.addItem(self.horizontalSpacer_3)
 
         self.lb_Valor = QLabel(self.frm_Corpo)
         self.lb_Valor.setObjectName(u"lb_Valor")
@@ -114,12 +118,12 @@ class Ui_Cad_Saldo_Conta(object):
 
         self.horizontalLayout_3.addWidget(self.lb_Valor)
 
-        self.txt_Valor = QLineEdit(self.frm_Corpo)
-        self.txt_Valor.setObjectName(u"txt_Valor")
-        self.txt_Valor.setMinimumSize(QSize(0, 30))
-        self.txt_Valor.setMaximumSize(QSize(16777215, 30))
+        self.dbs_Valor = QDoubleSpinBox(self.frm_Corpo)
+        self.dbs_Valor.setObjectName(u"dbs_Valor")
+        self.dbs_Valor.setMinimumSize(QSize(0, 30))
+        self.dbs_Valor.setMaximumSize(QSize(16777215, 30))
 
-        self.horizontalLayout_3.addWidget(self.txt_Valor)
+        self.horizontalLayout_3.addWidget(self.dbs_Valor)
 
 
         self.verticalLayout.addWidget(self.frm_Corpo)
@@ -183,6 +187,7 @@ class Ui_Cad_Saldo_Conta(object):
         self.bt_Novo.setText(QCoreApplication.translate("Cad_Saldo_Conta", u"+", None))
         self.lb_Data.setText(QCoreApplication.translate("Cad_Saldo_Conta", u"Data:", None))
         self.lb_Valor.setText(QCoreApplication.translate("Cad_Saldo_Conta", u"Valor:", None))
+        self.dbs_Valor.setPrefix(QCoreApplication.translate("Cad_Saldo_Conta", u"R$ ", None))
         self.bt_Salvar.setText(QCoreApplication.translate("Cad_Saldo_Conta", u"Salvar", None))
         self.bt_Editar.setText(QCoreApplication.translate("Cad_Saldo_Conta", u"Editar", None))
         self.bt_Limpar.setText(QCoreApplication.translate("Cad_Saldo_Conta", u"Limpar", None))

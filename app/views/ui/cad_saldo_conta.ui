@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>441</width>
+    <width>426</width>
     <height>136</height>
    </rect>
   </property>
@@ -220,13 +220,13 @@
           <widget class="QDateEdit" name="dt_Data">
            <property name="minimumSize">
             <size>
-             <width>0</width>
+             <width>130</width>
              <height>30</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>16777215</width>
+             <width>130</width>
              <height>30</height>
             </size>
            </property>
@@ -234,6 +234,22 @@
             <bool>true</bool>
            </property>
           </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Policy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>50</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
          <item>
           <widget class="QLabel" name="lb_Valor">
@@ -255,7 +271,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="txt_Valor">
+          <widget class="QDoubleSpinBox" name="dbs_Valor">
            <property name="minimumSize">
             <size>
              <width>0</width>
@@ -267,6 +283,9 @@
              <width>16777215</width>
              <height>30</height>
             </size>
+           </property>
+           <property name="prefix">
+            <string>R$ </string>
            </property>
           </widget>
          </item>
