@@ -3,6 +3,10 @@
 
 Mesmo layout da pré-visualização (o HTML é compartilhado). PDF via Qt
 (QTextDocument + QPrinter) — sem dependências extras.
+
+Itens agrupados por colaborador (ordem alfabética). Com mais de um
+colaborador no resultado, exibe SUBTOTAL após cada grupo e o TOTAL
+GERAL no fim; com um só colaborador, apenas o total.
 """
 from datetime import datetime
 
@@ -19,6 +23,8 @@ ZEBRA = "#F2F5F8"
 LINHA = "#C9D3DE"
 CINZA = "#5A6B7B"
 TEXTO = "#222222"
+SUBTOTAL = "#E8EDF2"
+TOTAL_GERAL = "#DCE4EE"
 
 _CABECALHOS = ["Data", "Seq", "Colaborador", "CPF", "Carga",
                "Sem Carga", "Valor", "Benefício"]
@@ -40,6 +46,22 @@ def _formatar_documento(documento: str) -> str:
     return documento or ""
 
 
+def _agrupar_por_colaborador(
+        registros: list[ItemRecargaRelatorio]
+) -> list[tuple[str, list[ItemRecargaRelatorio]]]:
+    """Agrupa registros consecutivos pelo nome do colaborador.
+
+    O repository já ordena por nome; basta acumular os blocos.
+    """
+    grupos: list[tuple[str, list[ItemRecargaRelatorio]]] = []
+    for r in registros:
+        if grupos and grupos[-1][0] == r.nome:
+            grupos[-1][1].append(r)
+        else:
+            grupos.append((r.nome, [r]))
+    return grupos
+
+
 def html_relatorio(registros: list[ItemRecargaRelatorio],
                    subtitulo: str = "") -> str:
     """HTML do relatório — usado na pré-visualização E no PDF."""
@@ -56,6 +78,9 @@ def html_relatorio(registros: list[ItemRecargaRelatorio],
         partes.append("<p>Nenhuma recarga encontrada.</p>")
         return "".join(partes)
 
+    grupos = _agrupar_por_colaborador(registros)
+    mostrar_subtotais = len(grupos) > 1
+
     partes += [
         "<table width='100%' cellspacing='0' cellpadding='4' "
         f"style='border:1px solid {LINHA};font-size:9pt;color:{TEXTO};"
@@ -64,23 +89,33 @@ def html_relatorio(registros: list[ItemRecargaRelatorio],
         + "".join(f"<th align='left'>{c}</th>" for c in _CABECALHOS)
         + "</tr>",
     ]
-    for indice, r in enumerate(registros):
-        fundo = ZEBRA if indice % 2 else "#FFFFFF"
-        partes.append(
-            f"<tr style='background-color:{fundo};'>"
-            f"<td>{r.data.strftime('%d/%m/%Y') if r.data else '—'}</td>"
-            f"<td>{r.sequencia}</td>"
-            f"<td>{r.nome}</td>"
-            f"<td>{_formatar_documento(r.documento)}</td>"
-            f"<td>{r.carga}</td>"
-            f"<td>{r.sem_carga}</td>"
-            f"<td align='right'>{_moeda(r.valor)}</td>"
-            f"<td>{r.beneficio}</td>"
-            "</tr>")
+    for nome, itens in grupos:
+        for indice, r in enumerate(itens):
+            fundo = ZEBRA if indice % 2 else "#FFFFFF"
+            partes.append(
+                f"<tr style='background-color:{fundo};'>"
+                f"<td>{r.data.strftime('%d/%m/%Y') if r.data else '—'}</td>"
+                f"<td>{r.sequencia}</td>"
+                f"<td>{r.nome}</td>"
+                f"<td>{_formatar_documento(r.documento)}</td>"
+                f"<td>{r.carga}</td>"
+                f"<td>{r.sem_carga}</td>"
+                f"<td align='right'>{_moeda(r.valor)}</td>"
+                f"<td>{r.beneficio}</td>"
+                "</tr>")
+        if mostrar_subtotais:
+            subtotal = sum(r.valor for r in itens)
+            partes.append(
+                "<tr style='background-color:" + SUBTOTAL +
+                ";font-weight:bold;" + f"color:{TEXTO};'>"
+                f"<td colspan='6'>Subtotal — {nome} "
+                f"({len(itens)} item(ns))</td>"
+                f"<td align='right'>{_moeda(subtotal)}</td>"
+                "<td></td></tr>")
     total = sum(r.valor for r in registros)
     partes.append(
-        "<tr style='background-color:#E8EDF2;font-weight:bold;"
-        f"color:{TEXTO};'>"
+        "<tr style='background-color:" + TOTAL_GERAL +
+        ";font-weight:bold;" + f"color:{AZUL};'>"
         f"<td colspan='6'>Totais — {len(registros)} item(ns)</td>"
         f"<td align='right'>{_moeda(total)}</td>"
         "<td></td></tr></table>")

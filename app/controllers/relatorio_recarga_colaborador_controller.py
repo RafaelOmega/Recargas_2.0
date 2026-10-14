@@ -7,8 +7,11 @@ o usuário gera PDF, XLSX ou CSV. Dados via
 RelatorioRecargaColaboradorService.
 
 Filtros: período (data inicial/final) + colaborador (nome livre ou
-selecionado na pesquisa de colaboradores via "...").
+selecionado na pesquisa de colaboradores via "..."). Padrão do
+período: do primeiro dia do mês corrente até hoje. Colaborador
+vazio traz TODOS os colaboradores.
 """
+from PySide6.QtCore import QDate
 from PySide6.QtWidgets import QMessageBox, QWidget
 
 from app.services.relatorio_recarga_colaborador_service import (
@@ -33,6 +36,11 @@ class RelRecargaColaboradorController(QWidget):
 
         self._service = RelatorioRecargaColaboradorService()
         self._colaborador = None  # seleção vinda da pesquisa ("...")
+
+        # período padrão: primeiro dia do mês corrente até hoje
+        hoje = QDate.currentDate()
+        self.ui.dt_Data_Inicial.setDate(QDate(hoje.year(), hoje.month(), 1))
+        self.ui.dt_Data_Final.setDate(hoje)
 
         self.ui.bt_Pesquisar_Colaborador.clicked.connect(
             self._pesquisar_colaborador)
@@ -75,13 +83,10 @@ class RelRecargaColaboradorController(QWidget):
         nome = self.ui.txt_Colaborador.text().strip()
         documento = (self._colaborador.documento or ""
                      if self._colaborador else "")
-        if not nome:
-            QMessageBox.warning(self, "Relatório", "Informe o colaborador.")
-            self.ui.txt_Colaborador.setFocus()
-            return
 
-        data_inicial = self.ui.dt_Data_Inicial.date().toPyDate()
-        data_final = self.ui.dt_Data_Final.date().toPyDate()
+        # PySide6: QDate.toPython() devolve datetime.date
+        data_inicial = self.ui.dt_Data_Inicial.date().toPython()
+        data_final = self.ui.dt_Data_Final.date().toPython()
         if data_inicial > data_final:
             QMessageBox.warning(
                 self, "Relatório",
@@ -100,8 +105,7 @@ class RelRecargaColaboradorController(QWidget):
         if not registros:
             QMessageBox.information(
                 self, "Relatório",
-                "Nenhum item de recarga encontrado para este colaborador "
-                "no período informado.")
+                "Nenhum item de recarga encontrado no período informado.")
             return
 
         # pré-visualização: mesmo layout do PDF, com PDF/XLSX/CSV
@@ -120,8 +124,10 @@ class RelRecargaColaboradorController(QWidget):
         if len(doc) == 11:
             colaborador = (f"Colaborador: {nome} "
                            f"(CPF {doc[:3]}.{doc[3:6]}.{doc[6:9]}-{doc[9:]})")
-        else:
+        elif nome:
             colaborador = f"Colaborador: {nome}"
+        else:
+            colaborador = "Colaborador: Todos"
         periodo = (f"Período: {data_inicial.strftime('%d/%m/%Y')} a "
                    f"{data_final.strftime('%d/%m/%Y')}")
         return f"{colaborador}    {periodo}"

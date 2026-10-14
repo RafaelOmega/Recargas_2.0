@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'relatorio_recarga_colaboradorDspilD.ui'
+## Form generated from reading UI file 'relatorio_recarga_colaboradorITBzwm.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -17,13 +17,13 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QDateEdit, QFrame, QHBoxLayout,
     QLabel, QLineEdit, QPushButton, QSizePolicy,
-    QVBoxLayout, QWidget)
+    QSpacerItem, QVBoxLayout, QWidget)
 
 class Ui_Rel_Recarga_Colaborador(object):
     def setupUi(self, Rel_Recarga_Colaborador):
         if not Rel_Recarga_Colaborador.objectName():
             Rel_Recarga_Colaborador.setObjectName(u"Rel_Recarga_Colaborador")
-        Rel_Recarga_Colaborador.resize(500, 136)
+        Rel_Recarga_Colaborador.resize(485, 136)
         font = QFont()
         font.setFamilies([u"Segoe UI Semibold"])
         font.setPointSize(12)
@@ -58,11 +58,15 @@ class Ui_Rel_Recarga_Colaborador(object):
 
         self.dt_Data_Inicial = QDateEdit(self.frm_Data)
         self.dt_Data_Inicial.setObjectName(u"dt_Data_Inicial")
-        self.dt_Data_Inicial.setMinimumSize(QSize(150, 30))
-        self.dt_Data_Inicial.setMaximumSize(QSize(150, 30))
+        self.dt_Data_Inicial.setMinimumSize(QSize(120, 30))
+        self.dt_Data_Inicial.setMaximumSize(QSize(120, 30))
         self.dt_Data_Inicial.setCalendarPopup(True)
 
         self.horizontalLayout_3.addWidget(self.dt_Data_Inicial)
+
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_3.addItem(self.horizontalSpacer)
 
         self.lb_Data_Final = QLabel(self.frm_Data)
         self.lb_Data_Final.setObjectName(u"lb_Data_Final")
@@ -73,8 +77,8 @@ class Ui_Rel_Recarga_Colaborador(object):
 
         self.dt_Data_Final = QDateEdit(self.frm_Data)
         self.dt_Data_Final.setObjectName(u"dt_Data_Final")
-        self.dt_Data_Final.setMinimumSize(QSize(150, 30))
-        self.dt_Data_Final.setMaximumSize(QSize(150, 30))
+        self.dt_Data_Final.setMinimumSize(QSize(130, 30))
+        self.dt_Data_Final.setMaximumSize(QSize(130, 30))
         self.dt_Data_Final.setCalendarPopup(True)
 
         self.horizontalLayout_3.addWidget(self.dt_Data_Final)

@@ -17,12 +17,15 @@ class RelatorioRecargaColaboradorRepository:
                               data_inicial=None,
                               data_final=None
                               ) -> list[ItemRecargaRelatorio]:
-        """Itens de recarga de um colaborador, em ordem cronológica.
+        """Itens de recarga agrupados por colaborador (relatório).
 
-        Filtro de colaborador prioriza o documento (apenas dígitos)
-        quando informado; senão, correspondência parcial no nome do
-        item. Período opcional restringe pela data da recarga
-        (inclusivo nas duas pontas).
+        Ordem: nome do colaborador (alfabética), depois data e
+        sequência — os blocos consecutivos alimentam os subtotais.
+
+        Colaborador: prioriza o documento (apenas dígitos) quando
+        informado; senão, correspondência parcial no nome do item;
+        sem colaborador informado, traz TODOS. Período opcional
+        restringe pela data da recarga (inclusivo nas duas pontas).
         """
         clausulas: list[str] = []
         params: list = []
@@ -35,8 +38,7 @@ class RelatorioRecargaColaboradorRepository:
         elif nome:
             clausulas.append("ri.nome ILIKE %s")
             params.append(f"%{nome}%")
-        else:
-            return []
+        # sem documento e sem nome: todos os colaboradores
 
         if data_inicial is not None:
             clausulas.append("r.data >= %s")
@@ -45,7 +47,7 @@ class RelatorioRecargaColaboradorRepository:
             clausulas.append("r.data <= %s")
             params.append(data_final)
 
-        where = " AND ".join(clausulas)
+        where = " AND ".join(clausulas) if clausulas else "TRUE"
         with self._conn:
             with self._conn.cursor() as cur:
                 cur.execute(
@@ -55,7 +57,7 @@ class RelatorioRecargaColaboradorRepository:
                     "FROM recargas_itens ri "
                     "JOIN recargas r ON r.id = ri.recarga_id "
                     f"WHERE {where} "
-                    "ORDER BY r.data, r.sequencia, ri.nome",
+                    "ORDER BY ri.nome, r.data, r.sequencia",
                     tuple(params),
                 )
                 registros = [
