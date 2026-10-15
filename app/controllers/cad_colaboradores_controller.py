@@ -274,7 +274,11 @@ class CadColaboradoresController(QWidget):
         self.ui.txt_Codigo.clear()
         self.ui.txt_Nome.clear()
         self.ui.txt_Documento.clear()
-        self.ui.chk_Ativo.setChecked(True)  # novo colaborador nasce ativo
+        self.ui.txt_Usuario.clear()
+        self.ui.txt_Senha.clear()
+        self.ui.txt_Senha.setPlaceholderText(
+            "mínimo 4 caracteres")
+        self.ui.chk_Ativo.setChecked(True)
         self._modo = ESTADO_INICIAL
         self._estado_inicial()
 
@@ -286,11 +290,16 @@ class CadColaboradoresController(QWidget):
             "ativo": self.ui.chk_Ativo.isChecked(),
         }
 
-    def _preencher(self, colaborador):
+    def _preencher(self, usuario):
         self._limpar_campos()
-        self.ui.txt_Codigo.setText(colaborador.codigo)
-        self.ui.txt_Nome.setText(colaborador.nome)
-        self.ui.txt_Documento.setText(colaborador.documento)
-        self.ui.chk_Ativo.setChecked(colaborador.ativo)
+        self.ui.txt_Codigo.setText(usuario.codigo)
+        self.ui.txt_Nome.setText(usuario.nome)
+        self.ui.txt_Documento.setText(usuario.documento)
+        self.ui.txt_Usuario.setText(usuario.login)
+        # senha nunca é exibida: placeholder indica que existe senha
+        # definida; vazio na edição = manter a atual
+        self.ui.txt_Senha.setPlaceholderText(
+            "••••••  (deixe vazio para manter a senha atual)")
+        self.ui.chk_Ativo.setChecked(usuario.ativo)
         self._modo = ESTADO_VISUALIZACAO
         self._estado_visualizacao()
