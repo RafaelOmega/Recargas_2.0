@@ -25,7 +25,8 @@ _COMANDOS = (
         id        SERIAL PRIMARY KEY,
         codigo    VARCHAR(20) UNIQUE NOT NULL,
         nome      VARCHAR(120) NOT NULL,
-        documento VARCHAR(20) DEFAULT ''
+        documento VARCHAR(20) DEFAULT '',
+        ativo     BOOLEAN NOT NULL DEFAULT TRUE
     )
     """,
     """
@@ -51,6 +52,12 @@ _COMANDOS = (
             PERFORM setval('seq_colaboradores_codigo', v_max, true);
         END IF;
     END $$
+    """,
+    # coluna ativo: migração idempotente de bases já existentes
+    # (colaboradores antigos tornam-se ativos pelo DEFAULT)
+    """
+    ALTER TABLE colaboradores
+        ADD COLUMN IF NOT EXISTS ativo BOOLEAN NOT NULL DEFAULT TRUE
     """,
     # ---------------- recargas (cabeçalho) ----------------
     """

@@ -2,7 +2,7 @@
 """Repositório de colaboradores: acesso a dados (PostgreSQL).
 
 Schema:
-  colaboradores (id, codigo, nome, documento)
+  colaboradores (id, codigo, nome, documento, ativo)
 
 O código é automático: vem da SEQUENCE seq_colaboradores_codigo
 (1, 2, 3, ...), criada e sincronizada pelo app.database.schema.
@@ -15,7 +15,7 @@ from app.utils.logger import get_logger
 
 logger = get_logger("colaborador_repository")
 
-_COLUNAS = "codigo, nome, documento"
+_COLUNAS = "codigo, nome, documento, ativo"
 
 _PROXIMO_CODIGO = "nextval('seq_colaboradores_codigo')::TEXT"
 
@@ -33,9 +33,10 @@ class ColaboradorRepository:
             with self._conn.cursor() as cur:
                 cur.execute(
                     f"INSERT INTO colaboradores ({_COLUNAS}) "
-                    f"VALUES ({_PROXIMO_CODIGO}, %s, %s) "
+                    f"VALUES ({_PROXIMO_CODIGO}, %s, %s, %s) "
                     "RETURNING id, codigo",
-                    (colaborador.nome, colaborador.documento),
+                    (colaborador.nome, colaborador.documento,
+                     colaborador.ativo),
                 )
                 linha = cur.fetchone()
                 colaborador.id, colaborador.codigo = linha[0], linha[1]
@@ -47,10 +48,10 @@ class ColaboradorRepository:
             with self._conn.cursor() as cur:
                 cur.execute(
                     "UPDATE colaboradores "
-                    "SET nome = %s, documento = %s "
+                    "SET nome = %s, documento = %s, ativo = %s "
                     "WHERE codigo = %s",
                     (colaborador.nome, colaborador.documento,
-                     colaborador.codigo),
+                     colaborador.ativo, colaborador.codigo),
                 )
                 atualizado = cur.rowcount > 0
         logger.info("Colaborador atualizado: %s (%s)",
@@ -74,26 +75,36 @@ class ColaboradorRepository:
         with self._conn:
             with self._conn.cursor() as cur:
                 cur.execute(
-                    "SELECT id, codigo, nome, documento "
+                    "SELECT id, codigo, nome, documento, ativo "
                     "FROM colaboradores WHERE codigo = %s",
                     (codigo,),
                 )
                 linha = cur.fetchone()
         return self._linha_para_colaborador(linha)
 
-    def pesquisar(self, filtro: str = "") -> list[Colaborador]:
+    def pesquisar(self, filtro: str = "",
+                  ativo: bool | None = None) -> list[Colaborador]:
+        """Pesquisa por código ou nome.
+
+        ativo=True somente ativos; ativo=False somente inativos;
+        ativo=None traz todos.
+        """
         termo = f"%{filtro}%"
+        clausulas = ["(codigo ILIKE %s OR nome ILIKE %s)"]
+        params: list = [termo, termo]
+        if ativo is not None:
+            clausulas.append("ativo = %s")
+            params.append(ativo)
         with self._conn:
             with self._conn.cursor() as cur:
                 cur.execute(
-                    """
-                    SELECT id, codigo, nome, documento
+                    f"""
+                    SELECT id, codigo, nome, documento, ativo
                       FROM colaboradores
-                     WHERE codigo ILIKE %s
-                        OR nome ILIKE %s
+                     WHERE {" AND ".join(clausulas)}
                      ORDER BY codigo
                     """,
-                    (termo, termo),
+                    tuple(params),
                 )
                 linhas = cur.fetchall()
         return [c for c in (self._linha_para_colaborador(l)
@@ -110,4 +121,5 @@ class ColaboradorRepository:
             codigo=linha[1] or "",
             nome=linha[2] or "",
             documento=linha[3] or "",
+            ativo=bool(linha[4]),
         )

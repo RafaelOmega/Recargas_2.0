@@ -6,9 +6,8 @@ Operações de dados são delegadas ao ColaboradorService.
 
 O código é automático (gerado no salvar): o campo txt_Codigo é
 somente leitura, exibindo o código do colaborador carregado/salvo.
-
 Navegação (Tab) em modo Z: esquerda para a direita e de cima
-para baixo — código/pesquisar/novo -> nome/documento -> CRUD.
+para baixo — código/pesquisar/novo -> nome/documento/ativo -> CRUD.
 """
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
@@ -72,15 +71,17 @@ class CadColaboradoresController(QWidget):
         """Ordem de tabulação em modo Z (esquerda->direita, cima->baixo).
 
         Linha 1 (frm_Codigo):  txt_Codigo -> bt_Pesquisar -> bt_Novo
-        Linha 2 (frm_Corpo):   txt_Nome -> txt_Documento
-        Linha 3 (frm_Crud):    bt_Salvar -> bt_Editar -> bt_Limpar -> bt_Excluir
+        Linha 2 (frm_Corpo):   txt_Nome -> txt_Documento -> chk_Ativo
+        Linha 3 (frm_Crud):    bt_Salvar -> bt_Editar -> bt_Limpar
+                               -> bt_Excluir
         """
         self.setTabOrder(self.ui.txt_Codigo,
                          self.ui.bt_Pesquisar_Colaborador)
         self.setTabOrder(self.ui.bt_Pesquisar_Colaborador, self.ui.bt_Novo)
         self.setTabOrder(self.ui.bt_Novo, self.ui.txt_Nome)
         self.setTabOrder(self.ui.txt_Nome, self.ui.txt_Documento)
-        self.setTabOrder(self.ui.txt_Documento, self.ui.bt_Salvar)
+        self.setTabOrder(self.ui.txt_Documento, self.ui.chk_Ativo)
+        self.setTabOrder(self.ui.chk_Ativo, self.ui.bt_Salvar)
         self.setTabOrder(self.ui.bt_Salvar, self.ui.bt_Editar)
         self.setTabOrder(self.ui.bt_Editar, self.ui.bt_Limpar)
         self.setTabOrder(self.ui.bt_Limpar, self.ui.bt_Excluir)
@@ -94,6 +95,7 @@ class CadColaboradoresController(QWidget):
 
         self.ui.txt_Nome.setEnabled(False)
         self.ui.txt_Documento.setEnabled(False)
+        self.ui.chk_Ativo.setEnabled(False)
         self.ui.bt_Salvar.setEnabled(False)
         self.ui.bt_Editar.setEnabled(False)
         self.ui.bt_Excluir.setEnabled(False)
@@ -104,6 +106,7 @@ class CadColaboradoresController(QWidget):
         self.ui.txt_Codigo.clear()
         self.ui.txt_Nome.setEnabled(True)
         self.ui.txt_Documento.setEnabled(True)
+        self.ui.chk_Ativo.setEnabled(True)
         self.ui.bt_Salvar.setEnabled(True)
         self.ui.bt_Limpar.setEnabled(True)
         self.ui.bt_Editar.setEnabled(False)
@@ -115,6 +118,7 @@ class CadColaboradoresController(QWidget):
         self.ui.txt_Codigo.setEnabled(False)
         self.ui.txt_Nome.setEnabled(False)
         self.ui.txt_Documento.setEnabled(False)
+        self.ui.chk_Ativo.setEnabled(False)
         self.ui.bt_Salvar.setEnabled(False)
         self.ui.bt_Novo.setEnabled(False)
         self.ui.bt_Pesquisar_Colaborador.setEnabled(False)
@@ -126,18 +130,13 @@ class CadColaboradoresController(QWidget):
         self.ui.txt_Codigo.setEnabled(False)  # código é a chave
         self.ui.txt_Nome.setEnabled(True)
         self.ui.txt_Documento.setEnabled(True)
+        self.ui.chk_Ativo.setEnabled(True)
         self.ui.bt_Salvar.setEnabled(True)
         self.ui.bt_Excluir.setEnabled(True)
         self.ui.bt_Limpar.setEnabled(True)
         self.ui.bt_Editar.setEnabled(False)
         self.ui.bt_Novo.setEnabled(False)
         self.ui.bt_Pesquisar_Colaborador.setEnabled(False)
-
-    # ---------------- mensagens ----------------
-
-    def _mensagem_erro(self, exc: Exception) -> str:
-        return mensagem_erro(
-            exc, duplicidade="Já existe um colaborador com esse código.")
 
     # ---------------- acoes de tela ----------------
 
@@ -163,28 +162,17 @@ class CadColaboradoresController(QWidget):
         from app.controllers.pesquisa_colaborador_controller import (
             PesquisaColaboradorController,
         )
-        try:
-            dialogo = PesquisaColaboradorController(self)
-        except Exception as exc:
-            logger.exception("Erro ao abrir pesquisa")
-            QMessageBox.critical(
-                self, "Erro",
-                f"Não foi possível abrir a pesquisa:\n{exc}")
-            return
-        if dialogo.exec() == dialogo.DialogCode.Accepted:
+        dialogo = PesquisaColaboradorController(self)
+        if dialogo.exec():
             colaborador = dialogo.colaborador_selecionado()
             if colaborador:
                 self._preencher(colaborador)
 
     def _validar_obrigatorios(self) -> bool:
-        nome = self.ui.txt_Nome.text().strip()
-
-        if not nome:
-            QMessageBox.warning(
-                self, "Atenção", "Informe o nome do colaborador.")
+        if not self.ui.txt_Nome.text().strip():
+            QMessageBox.warning(self, "Atenção", "Informe o nome.")
             self.ui.txt_Nome.setFocus()
             return False
-
         return True
 
     def _salvar(self):
@@ -224,37 +212,34 @@ class CadColaboradoresController(QWidget):
             QMessageBox.critical(
                 self, "Erro", "Service de colaboradores indisponível.")
             return
-
         codigo = self.ui.txt_Codigo.text().strip()
         if not codigo:
-            QMessageBox.warning(
-                self, "Atenção", "Nenhum colaborador carregado para excluir.")
             return
-
         resposta = QMessageBox.question(
-            self, "Confirmar exclusão",
-            f"Excluir o colaborador '{codigo}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
+            self, "Excluir",
+            f"Excluir o colaborador {codigo}?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if resposta != QMessageBox.StandardButton.Yes:
             return
-
         try:
             self._service.excluir(codigo)
         except Exception as exc:
             logger.exception("Falha ao excluir colaborador")
             QMessageBox.critical(
                 self, "Erro",
-                f"Não foi possível excluir o colaborador:"
-                f"\n{self._mensagem_erro(exc)}")
+                f"Não foi possível excluir:\n{self._mensagem_erro(exc)}")
             return
-
         logger.info("Colaborador excluído: %s", codigo)
         QMessageBox.information(
             self, "Sucesso", "Colaborador excluído com sucesso.")
         self._limpar_campos()
         self.ui.txt_Codigo.setFocus()
+
+    # ---------------- mensagens ----------------
+
+    def _mensagem_erro(self, exc: Exception) -> str:
+        return mensagem_erro(
+            exc, duplicidade="Já existe um colaborador com esse código.")
 
     # ---------------- campos ----------------
 
@@ -262,6 +247,7 @@ class CadColaboradoresController(QWidget):
         self.ui.txt_Codigo.clear()
         self.ui.txt_Nome.clear()
         self.ui.txt_Documento.clear()
+        self.ui.chk_Ativo.setChecked(True)  # novo colaborador nasce ativo
         self._modo = ESTADO_INICIAL
         self._estado_inicial()
 
@@ -270,6 +256,7 @@ class CadColaboradoresController(QWidget):
             "codigo": self.ui.txt_Codigo.text().strip(),
             "nome": self.ui.txt_Nome.text().strip(),
             "documento": self.ui.txt_Documento.text().strip(),
+            "ativo": self.ui.chk_Ativo.isChecked(),
         }
 
     def _preencher(self, colaborador):
@@ -277,5 +264,6 @@ class CadColaboradoresController(QWidget):
         self.ui.txt_Codigo.setText(colaborador.codigo)
         self.ui.txt_Nome.setText(colaborador.nome)
         self.ui.txt_Documento.setText(colaborador.documento)
+        self.ui.chk_Ativo.setChecked(colaborador.ativo)
         self._modo = ESTADO_VISUALIZACAO
         self._estado_visualizacao()

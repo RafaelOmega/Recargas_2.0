@@ -24,5 +24,6 @@ class ColaboradorService:
     def buscar_por_codigo(self, codigo: str) -> Colaborador | None:
         return self._repo.buscar_por_codigo(codigo)
 
-    def pesquisar(self, filtro: str = "") -> list[Colaborador]:
-        return self._repo.pesquisar(filtro)
+    def pesquisar(self, filtro: str = "",
+                  ativo: bool | None = None) -> list[Colaborador]:
+        return self._repo.pesquisar(filtro, ativo=ativo)

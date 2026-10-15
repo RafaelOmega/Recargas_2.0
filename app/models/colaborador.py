@@ -8,6 +8,7 @@ class Colaborador:
     codigo: str
     nome: str
     documento: str = ""
+    ativo: bool = True
     id: int | None = None
 
     @classmethod
@@ -17,9 +18,9 @@ class Colaborador:
             codigo=str(dados.get("codigo", "")).strip(),
             nome=str(dados.get("nome", "")).strip(),
             documento=str(dados.get("documento", "") or "").strip(),
+            ativo=bool(dados.get("ativo", True)),
             id=dados.get("id"),
         )
 
     def to_dict(self) -> dict:
-        """Converte para dict pronto para as telas."""
         return asdict(self)
