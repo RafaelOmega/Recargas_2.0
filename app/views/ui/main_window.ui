@@ -296,6 +296,7 @@ QFrame#frm_StatusBar QTimeEdit {
      <string>Relatórios</string>
     </property>
     <addaction name="actionRecarga_Colaborador"/>
+    <addaction name="actionDash_Refeicao"/>
    </widget>
    <addaction name="menuCadastros"/>
    <addaction name="menuLancamentos"/>
@@ -379,6 +380,11 @@ QFrame#frm_StatusBar QTimeEdit {
   <action name="actionUsuarios">
    <property name="text">
     <string>Usuários</string>
+   </property>
+  </action>
+  <action name="actionDash_Refeicao">
+   <property name="text">
+    <string>DashBoard Recargas</string>
    </property>
   </action>
  </widget>

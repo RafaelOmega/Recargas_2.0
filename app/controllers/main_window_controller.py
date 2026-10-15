@@ -26,6 +26,9 @@ from app.controllers.cad_saldo_conta_controller import (
 from app.controllers.cad_usuarios_controller import (
     CadUsuariosController,
 )
+from app.controllers.dashboard_refeicao_controller import (
+    DashRefeicaoController,
+)
 from app.controllers.lancamento_recargas_controller import (
     LancamentoRecargasController,
 )
@@ -52,6 +55,7 @@ _TELAS = {
     "saldo_biz": ("actionSaldo_BIZ", "Saldo BIZ"),
     "rel_recarga_colaborador": ("actionRecarga_Colaborador",
                                 "Recarga por Colaborador"),
+    "dash_refeicao": ("actionDash_Refeicao", "Dashboard Refeição"),
 }
 
 # intervalo de atualização automática do saldo da conta (30 s)
@@ -110,6 +114,8 @@ class MainWindowController(QMainWindow):
             pai)
         self._criadores["rel_recarga_colaborador"] = lambda pai: (
             RelRecargaColaboradorController(pai))
+        self._criadores["dash_refeicao"] = lambda pai: (
+            DashRefeicaoController(pai))
 
     # ---------------- configuração ----------------
 

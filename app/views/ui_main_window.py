@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'main_windowVuqqfb.ui'
+## Form generated from reading UI file 'main_windowOfQzIT.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -63,6 +63,8 @@ class Ui_MainWindow(object):
         self.actionRecarga_Colaborador.setObjectName(u"actionRecarga_Colaborador")
         self.actionUsuarios = QAction(MainWindow)
         self.actionUsuarios.setObjectName(u"actionUsuarios")
+        self.actionDash_Refeicao = QAction(MainWindow)
+        self.actionDash_Refeicao.setObjectName(u"actionDash_Refeicao")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
@@ -189,6 +191,7 @@ class Ui_MainWindow(object):
         self.menuCadastros.addAction(self.actionUsuarios)
         self.menuLancamentos.addAction(self.actionRecargas)
         self.menuRelatorios.addAction(self.actionRecarga_Colaborador)
+        self.menuRelatorios.addAction(self.actionDash_Refeicao)
 
         self.retranslateUi(MainWindow)
 
@@ -213,6 +216,7 @@ class Ui_MainWindow(object):
         self.actionSaldo_BIZ.setText(QCoreApplication.translate("MainWindow", u"Saldo BIZ", None))
         self.actionRecarga_Colaborador.setText(QCoreApplication.translate("MainWindow", u"Recarga por Colaborador", None))
         self.actionUsuarios.setText(QCoreApplication.translate("MainWindow", u"Usu\u00e1rios", None))
+        self.actionDash_Refeicao.setText(QCoreApplication.translate("MainWindow", u"DashBoard Recargas", None))
         self.lb_Saldo_Conta.setText(QCoreApplication.translate("MainWindow", u"Saldo Conta:", None))
 #if QT_CONFIG(tooltip)
         self.txt_Saldo_Conta.setToolTip(QCoreApplication.translate("MainWindow", u"Saldo da conta Biz (recargas - saldos)", None))

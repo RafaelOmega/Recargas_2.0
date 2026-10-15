@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'loginPAySxM.ui'
+## Form generated from reading UI file 'loginuckZlJ.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -71,6 +71,7 @@ class Ui_Login(object):
         self.txt_Senha.setObjectName(u"txt_Senha")
         self.txt_Senha.setMinimumSize(QSize(0, 30))
         self.txt_Senha.setMaximumSize(QSize(16777215, 30))
+        self.txt_Senha.setEchoMode(QLineEdit.EchoMode.Password)
 
         self.gridLayout.addWidget(self.txt_Senha, 1, 1, 1, 1)
 
