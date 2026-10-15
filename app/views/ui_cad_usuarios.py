@@ -1,24 +1,23 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-# Form generated from reading UI file 'cad_usuariosxEwVOJ.ui'
+## Form generated from reading UI file 'cad_usuariosFDCNNH.ui'
 ##
-# Created by: Qt User Interface Compiler version 6.11.2
+## Created by: Qt User Interface Compiler version 6.11.2
 ##
-# WARNING! All changes made in this file will be lost when recompiling UI file!
+## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-                            QMetaObject, QObject, QPoint, QRect,
-                            QSize, QTime, QUrl, Qt)
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
 from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-                           QFont, QFontDatabase, QGradient, QIcon,
-                           QImage, QKeySequence, QLinearGradient, QPainter,
-                           QPalette, QPixmap, QRadialGradient, QTransform)
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QFrame, QGridLayout,
-                               QHBoxLayout, QLabel, QLineEdit, QPushButton,
-                               QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
-
+    QHBoxLayout, QLabel, QLineEdit, QPushButton,
+    QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
 class Ui_Cad_Usuarios(object):
     def setupUi(self, Cad_Usuarios):
@@ -70,10 +69,10 @@ class Ui_Cad_Usuarios(object):
 
         self.horizontalLayout.addWidget(self.bt_Novo)
 
-        self.horizontalSpacer = QSpacerItem(
-            253, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.horizontalSpacer = QSpacerItem(253, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
+
 
         self.verticalLayout.addWidget(self.frm_Codigo)
 
@@ -97,8 +96,7 @@ class Ui_Cad_Usuarios(object):
         self.lb_Documento.setMinimumSize(QSize(0, 30))
         self.lb_Documento.setMaximumSize(QSize(16777215, 30))
 
-        self.gridLayout.addWidget(
-            self.lb_Documento, 3, 0, 1, 1, Qt.AlignmentFlag.AlignRight)
+        self.gridLayout.addWidget(self.lb_Documento, 3, 0, 1, 1, Qt.AlignmentFlag.AlignRight)
 
         self.lb_Nome = QLabel(self.frm_Corpo)
         self.lb_Nome.setObjectName(u"lb_Nome")
@@ -113,8 +111,7 @@ class Ui_Cad_Usuarios(object):
 
         self.gridLayout.addWidget(self.chk_Ativo, 3, 3, 1, 1)
 
-        self.horizontalSpacer_2 = QSpacerItem(
-            40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.gridLayout.addItem(self.horizontalSpacer_2, 3, 4, 1, 1)
 
@@ -124,6 +121,7 @@ class Ui_Cad_Usuarios(object):
         self.txt_Nome.setMaximumSize(QSize(16777215, 30))
 
         self.gridLayout.addWidget(self.txt_Nome, 2, 1, 1, 4)
+
 
         self.verticalLayout.addWidget(self.frm_Corpo)
 
@@ -160,8 +158,10 @@ class Ui_Cad_Usuarios(object):
         self.txt_Senha.setObjectName(u"txt_Senha")
         self.txt_Senha.setMinimumSize(QSize(0, 30))
         self.txt_Senha.setMaximumSize(QSize(16777215, 30))
+        self.txt_Senha.setEchoMode(QLineEdit.EchoMode.Password)
 
         self.horizontalLayout_3.addWidget(self.txt_Senha)
+
 
         self.verticalLayout.addWidget(self.frm_Usuario)
 
@@ -187,8 +187,7 @@ class Ui_Cad_Usuarios(object):
 
         self.horizontalLayout_2.addWidget(self.bt_Editar)
 
-        self.horizontalSpacer_3 = QSpacerItem(
-            40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer_3)
 
@@ -206,7 +205,9 @@ class Ui_Cad_Usuarios(object):
 
         self.horizontalLayout_2.addWidget(self.bt_Excluir)
 
+
         self.verticalLayout.addWidget(self.frm_Crud)
+
 
         self.retranslateUi(Cad_Usuarios)
 
@@ -214,31 +215,19 @@ class Ui_Cad_Usuarios(object):
     # setupUi
 
     def retranslateUi(self, Cad_Usuarios):
-        Cad_Usuarios.setWindowTitle(QCoreApplication.translate(
-            "Cad_Usuarios", u"Cadastro de Usuarios", None))
-        self.lb_Codigo.setText(QCoreApplication.translate(
-            "Cad_Usuarios", u"C\u00f3digo:", None))
+        Cad_Usuarios.setWindowTitle(QCoreApplication.translate("Cad_Usuarios", u"Cadastro de Usuarios", None))
+        self.lb_Codigo.setText(QCoreApplication.translate("Cad_Usuarios", u"C\u00f3digo:", None))
         self.txt_Codigo.setText("")
-        self.bt_Pesquisar_Usuario.setText(
-            QCoreApplication.translate("Cad_Usuarios", u"...", None))
-        self.bt_Novo.setText(QCoreApplication.translate(
-            "Cad_Usuarios", u"+", None))
-        self.lb_Documento.setText(
-            QCoreApplication.translate("Cad_Usuarios", u"CPF:", None))
-        self.lb_Nome.setText(QCoreApplication.translate(
-            "Cad_Usuarios", u"Nome:", None))
-        self.chk_Ativo.setText(QCoreApplication.translate(
-            "Cad_Usuarios", u"Ativo", None))
-        self.lb_Usuario.setText(QCoreApplication.translate(
-            "Cad_Usuarios", u"Usuario:", None))
-        self.lb_Senha.setText(QCoreApplication.translate(
-            "Cad_Usuarios", u"Senha:", None))
-        self.bt_Salvar.setText(QCoreApplication.translate(
-            "Cad_Usuarios", u"Salvar", None))
-        self.bt_Editar.setText(QCoreApplication.translate(
-            "Cad_Usuarios", u"Editar", None))
-        self.bt_Limpar.setText(QCoreApplication.translate(
-            "Cad_Usuarios", u"Limpar", None))
-        self.bt_Excluir.setText(QCoreApplication.translate(
-            "Cad_Usuarios", u"Excluir", None))
+        self.bt_Pesquisar_Usuario.setText(QCoreApplication.translate("Cad_Usuarios", u"...", None))
+        self.bt_Novo.setText(QCoreApplication.translate("Cad_Usuarios", u"+", None))
+        self.lb_Documento.setText(QCoreApplication.translate("Cad_Usuarios", u"CPF:", None))
+        self.lb_Nome.setText(QCoreApplication.translate("Cad_Usuarios", u"Nome:", None))
+        self.chk_Ativo.setText(QCoreApplication.translate("Cad_Usuarios", u"Ativo", None))
+        self.lb_Usuario.setText(QCoreApplication.translate("Cad_Usuarios", u"Usuario:", None))
+        self.lb_Senha.setText(QCoreApplication.translate("Cad_Usuarios", u"Senha:", None))
+        self.bt_Salvar.setText(QCoreApplication.translate("Cad_Usuarios", u"Salvar", None))
+        self.bt_Editar.setText(QCoreApplication.translate("Cad_Usuarios", u"Editar", None))
+        self.bt_Limpar.setText(QCoreApplication.translate("Cad_Usuarios", u"Limpar", None))
+        self.bt_Excluir.setText(QCoreApplication.translate("Cad_Usuarios", u"Excluir", None))
     # retranslateUi
+

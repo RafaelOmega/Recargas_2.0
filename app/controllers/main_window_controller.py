@@ -5,8 +5,7 @@ Responsabilidade: montar a UI, ligar as ações do menu às subjanelas
 do QMdiArea e manter data/hora e o saldo da conta na barra de status.
 
 Cada tela é uma chave em _TELAS; a factory do seu controller é
-registrada em _criadores. Enquanto o controller real não existir,
-um placeholder é exibido.
+registrada em _criadores.
 
 Multiusuário: o saldo é recalculado no banco (nunca em cache) e o
 service é recriado automaticamente se a conexão morrer (queda de
@@ -22,6 +21,9 @@ from app.controllers.cad_colaboradores_controller import (
 )
 from app.controllers.cad_saldo_conta_controller import (
     CadSaldoContaController,
+)
+from app.controllers.cad_usuarios_controller import (
+    CadUsuariosController,
 )
 from app.controllers.lancamento_recargas_controller import (
     LancamentoRecargasController,
@@ -44,6 +46,7 @@ logger = get_logger("main_window")
 # Ao adicionar/renomear actions no Designer, ajuste apenas este dicionário.
 _TELAS = {
     "colaboradores": ("actionCad_Colaboradores", "Colaboradores"),
+    "usuarios": ("actionUsuarios", "Usuários"),
     "recargas": ("actionRecargas", "Lançamento de Recargas"),
     "saldo_biz": ("actionSaldo_BIZ", "Saldo BIZ"),
     "rel_recarga_colaborador": ("actionRecarga_Colaborador",
@@ -85,6 +88,8 @@ class MainWindowController(QMainWindow):
         logger.info("Janela principal iniciada")
 
         self._criadores["colaboradores"] = lambda pai: CadColaboradoresController(
+            pai)
+        self._criadores["usuarios"] = lambda pai: CadUsuariosController(
             pai)
         self._criadores["recargas"] = lambda pai: LancamentoRecargasController(
             pai)
