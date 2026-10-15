@@ -56,6 +56,18 @@ _TELAS = {
 # intervalo de atualização automática do saldo da conta (30 s)
 INTERVALO_SALDO_MS = 30_000
 
+# estilo do campo de saldo (chip sobre a barra azul da barra de status)
+_ESTILO_SALDO = (
+    "QLineEdit{background:rgba(255,255,255,0.12);"
+    "border:1px solid #2E5A8F;border-radius:4px;"
+    "padding:2px 8px;color:#FFFFFF;}"
+)
+_ESTILO_SALDO_NEGATIVO = (
+    "QLineEdit{background:rgba(255,255,255,0.12);"
+    "border:1px solid #C0392B;border-radius:4px;"
+    "padding:2px 8px;color:#FF8A80;font-weight:bold;}"
+)
+
 
 def _formatar_moeda(valor: float) -> str:
     """Float -> 'R$ 1.234,56' (padrão brasileiro, sinal na frente)."""
@@ -174,9 +186,9 @@ class MainWindowController(QMainWindow):
             self.ui.txt_Saldo_Conta.setText("—")
             return
         self.ui.txt_Saldo_Conta.setText(_formatar_moeda(saldo))
-        # negativo destacado em vermelho
+        # negativo destacado: borda e texto vermelhos, chip mantido
         self.ui.txt_Saldo_Conta.setStyleSheet(
-            "color: #C0392B;" if saldo < 0 else "")
+            _ESTILO_SALDO_NEGATIVO if saldo < 0 else _ESTILO_SALDO)
 
     def _ao_ativar_subjanela(self, sub):
         # ao voltar/focus de uma subjanela (ex.: após salvar), atualiza

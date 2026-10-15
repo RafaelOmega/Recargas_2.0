@@ -38,10 +38,39 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="QMdiArea" name="mdiArea"/>
+     <widget class="QMdiArea" name="mdiArea">
+      <property name="styleSheet">
+       <string notr="true">QMdiArea#mdiArea {
+	background-color: #16222F;
+}</string>
+      </property>
+     </widget>
     </item>
     <item>
      <widget class="QFrame" name="frm_StatusBar">
+      <property name="styleSheet">
+       <string notr="true">QFrame#frm_StatusBar {
+	background-color: #1F3B5B;
+	border: none;
+	border-top: 2px solid #2E5A8F;
+}
+QFrame#frm_StatusBar QLabel {
+	color: #D7E3F4;
+	background: transparent;
+}
+QFrame#frm_StatusBar QLabel#lb_Comandos {
+	color: #9FB8D8;
+}
+QFrame#frm_StatusBar QLabel#lb_Versao {
+	color: #8FA8C6;
+}
+QFrame#frm_StatusBar QDateEdit,
+QFrame#frm_StatusBar QTimeEdit {
+	background: transparent;
+	color: #B9CCE4;
+	border: none;
+}</string>
+      </property>
       <property name="frameShape">
        <enum>QFrame::Shape::StyledPanel</enum>
       </property>
@@ -50,19 +79,19 @@
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <property name="spacing">
-        <number>0</number>
+        <number>10</number>
        </property>
        <property name="leftMargin">
-        <number>0</number>
+        <number>12</number>
        </property>
        <property name="topMargin">
-        <number>0</number>
+        <number>4</number>
        </property>
        <property name="rightMargin">
-        <number>0</number>
+        <number>12</number>
        </property>
        <property name="bottomMargin">
-        <number>0</number>
+        <number>4</number>
        </property>
        <item>
         <widget class="QLabel" name="lb_Comandos">
@@ -77,9 +106,6 @@
            <width>16777215</width>
            <height>30</height>
           </size>
-         </property>
-         <property name="text">
-          <string/>
          </property>
         </widget>
        </item>
@@ -119,15 +145,21 @@
         <widget class="QLineEdit" name="txt_Saldo_Conta">
          <property name="minimumSize">
           <size>
-           <width>120</width>
+           <width>150</width>
            <height>30</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>120</width>
+           <width>150</width>
            <height>30</height>
           </size>
+         </property>
+         <property name="toolTip">
+          <string>Saldo da conta Biz (recargas - saldos)</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
          </property>
          <property name="readOnly">
           <bool>true</bool>
@@ -153,6 +185,9 @@
          </property>
          <property name="focusPolicy">
           <enum>Qt::FocusPolicy::NoFocus</enum>
+         </property>
+         <property name="toolTip">
+          <string>Data de hoje</string>
          </property>
          <property name="readOnly">
           <bool>true</bool>
@@ -181,6 +216,9 @@
          </property>
          <property name="focusPolicy">
           <enum>Qt::FocusPolicy::NoFocus</enum>
+         </property>
+         <property name="toolTip">
+          <string>Hora atual</string>
          </property>
          <property name="readOnly">
           <bool>true</bool>
@@ -255,7 +293,7 @@
    </widget>
    <widget class="QMenu" name="menuRelatorios">
     <property name="title">
-     <string>Relatorios</string>
+     <string>Relatórios</string>
     </property>
     <addaction name="actionRecarga_Colaborador"/>
    </widget>
@@ -340,7 +378,7 @@
   </action>
   <action name="actionUsuarios">
    <property name="text">
-    <string>Usuarios</string>
+    <string>Usuários</string>
    </property>
   </action>
  </widget>
