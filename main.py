@@ -3,9 +3,10 @@
 import ctypes
 import sys
 
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 from app.controllers.carregamento_controller import CarregamentoController
+from app.controllers.login_controller import LoginController
 from app.controllers.main_window_controller import MainWindowController
 from app.database import get_connection
 from app.database.schema import criar_schema
@@ -82,6 +83,18 @@ def main() -> int:
             )
             return 1
 
+    # login: bloqueia o acesso antes de abrir o sistema
+    splash.atualizar(80, "Autenticando usuário...")
+    splash.close()
+    login = LoginController()
+    if login.exec() != QDialog.DialogCode.Accepted:
+        logger.info("Login cancelado — encerrando")
+        return 0
+    usuario = login.usuario_autenticado
+    logger.info("Sessão iniciada: %s", usuario.login if usuario else "?")
+
+    splash = CarregamentoController()
+    splash.show()
     splash.atualizar(85, "Carregando as janelas do sistema...")
     janela = MainWindowController()
 
