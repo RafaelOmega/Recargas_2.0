@@ -3,6 +3,7 @@ QMainWindow, QWidget {
     background-color: rgb(19, 27, 47);
     color: rgb(255, 255, 255);
 }
+
 /* ===== MENU BAR (topo) ===== */
 QMenuBar {
     background-color: rgb(19, 27, 47);
@@ -25,6 +26,7 @@ QMenuBar::item:pressed {
     color: rgb(255, 255, 255);
     border: 1px solid rgb(85, 170, 255);
 }
+
 /* ===== MENU DROPDOWN ===== */
 QMenu {
     background-color: rgb(19, 27, 47);
@@ -48,12 +50,14 @@ QMenu::separator {
     background: rgb(55, 75, 115);
     margin: 6px 4px;
 }
+
 /* ===== FRAMES ===== */
 QFrame {
     background-color: #1A243C;
     border: 1px solid #2F3E63;
     border-radius: 6px;
 }
+
 /* ===== LABELS ===== */
 QLabel {
     background-color: #222E4A;
@@ -63,6 +67,7 @@ QLabel {
     padding: 4px 8px;
     font-weight: bold;
 }
+
 /* ===== BOTÕES ===== */
 QPushButton {
     background: #243258;
@@ -78,6 +83,7 @@ QPushButton:disabled {
     color: #5A6680;
     border: 1px solid #2A3450;
 }
+
 /* ===== CAMPOS DE ENTRADA ===== */
 QLineEdit, QSpinBox, QDoubleSpinBox {
     background: #1A243C;
@@ -89,6 +95,7 @@ QLineEdit, QSpinBox, QDoubleSpinBox {
 QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
     border-color: #6A8AE0;
 }
+
 /* ===== DATE/TIME EDIT ===== */
 QDateEdit, QTimeEdit {
     background: #1A243C;
@@ -103,6 +110,7 @@ QDateEdit:disabled, QTimeEdit:disabled {
     color: #5A6680;
     border: 1px solid #2A3450;
 }
+
 /* ===== COMBO BOX ===== */
 QComboBox {
     background: #1A243C;
@@ -112,6 +120,7 @@ QComboBox {
     padding: 2px 6px;
 }
 QComboBox:hover { border-color: #6A8AE0; }
+
 /* ===== TABELA ===== */
 QTableView, QTableWidget {
     background-color: #1A243C;
@@ -130,6 +139,7 @@ QHeaderView::section {
     padding: 4px 8px;
     font-weight: bold;
 }
+
 /* ===== SCROLLBAR ===== */
 QScrollBar:vertical {
     background: #1A243C;
@@ -155,6 +165,7 @@ QScrollBar::handle:horizontal {
 }
 QScrollBar::handle:horizontal:hover { background: #6A8AE0; }
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
+
 /* ===== MDI AREA ===== */
 QMdiArea {
     background-color: #131B2F;
@@ -164,4 +175,39 @@ QMdiSubWindow {
     background-color: #1A243C;
     border: 1px solid #485C8C;
     border-radius: 4px;
+}
+
+/* ===== BARRA INFERIOR DAS TELAS INTERNAS ===== */
+/* Rodapé de ação dentro da paleta do tema: fundo #1E2A48 (tom zebra
+   das tabelas), linha de acento #485C8C no topo e botões no estilo
+   padrão do tema com hover de acento #6A8AE0. */
+QFrame#frm_Crud {
+    background-color: #1E2A48;
+    border: 1px solid #2F3E63;
+    border-top: 2px solid #485C8C;
+    border-radius: 6px;
+}
+QFrame#frm_Crud QLabel {
+    background: transparent;
+    border: none;
+    color: #FFD36E;
+}
+QFrame#frm_Crud QPushButton {
+    background: #243258;
+    color: #FFFFFF;
+    border: 1px solid #485C8C;
+    border-radius: 4px;
+    padding: 4px 14px;
+}
+QFrame#frm_Crud QPushButton:hover {
+    background: #2E3E68;
+    border-color: #6A8AE0;
+}
+QFrame#frm_Crud QPushButton:pressed {
+    background: #1B2643;
+}
+QFrame#frm_Crud QPushButton:disabled {
+    background: #1A2030;
+    color: #5A6680;
+    border: 1px solid #2A3450;
 }

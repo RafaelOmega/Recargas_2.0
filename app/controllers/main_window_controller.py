@@ -2,7 +2,8 @@
 """Controller da janela principal (MDI) do sistema Recargas.
 
 Responsabilidade: montar a UI, ligar as ações do menu às subjanelas
-do QMdiArea e manter data/hora e o saldo da conta na barra de status.
+do QMdiArea e manter data/hora, o saldo da conta e a indicação da
+tela ativa na barra de status.
 
 Cada tela é uma chave em _TELAS; a factory do seu controller é
 registrada em _criadores.
@@ -191,6 +192,15 @@ class MainWindowController(QMainWindow):
             _ESTILO_SALDO_NEGATIVO if saldo < 0 else _ESTILO_SALDO)
 
     def _ao_ativar_subjanela(self, sub):
+        """Informa a tela ativa na barra de status e atualiza o saldo.
+
+        sub é None quando a última subjanela é fechada — o indicador
+        de tela é limpo.
+        """
+        if sub is None:
+            self.ui.lb_Comandos.setText("")
+        else:
+            self.ui.lb_Comandos.setText(sub.windowTitle())
         # ao voltar/focus de uma subjanela (ex.: após salvar), atualiza
         self._atualizar_saldo_conta()
 
@@ -214,6 +224,9 @@ class MainWindowController(QMainWindow):
 
         self._subjanelas[chave] = sub
         sub.show()
+        # indicador da tela ativa (subWindowActivated também cobre;
+        # o set explícito garante na abertura)
+        self.ui.lb_Comandos.setText(titulo)
         logger.info("Tela aberta: %s", titulo)
 
     def _criar_widget(self, chave: str, titulo: str) -> QWidget:
