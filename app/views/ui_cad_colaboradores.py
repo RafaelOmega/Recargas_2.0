@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'cad_colaboradoresbPqHLD.ui'
+## Form generated from reading UI file 'cad_colaboradoresYbpRdI.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -15,9 +15,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
-    QLabel, QLineEdit, QPushButton, QSizePolicy,
-    QSpacerItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QFrame, QGridLayout,
+    QHBoxLayout, QLabel, QLineEdit, QPushButton,
+    QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
 class Ui_Cad_Colaboradores(object):
     def setupUi(self, Cad_Colaboradores):
@@ -84,19 +84,19 @@ class Ui_Cad_Colaboradores(object):
         self.gridLayout.setSpacing(5)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(5, 5, 5, 5)
+        self.txt_Documento = QLineEdit(self.frm_Corpo)
+        self.txt_Documento.setObjectName(u"txt_Documento")
+        self.txt_Documento.setMinimumSize(QSize(180, 30))
+        self.txt_Documento.setMaximumSize(QSize(180, 30))
+
+        self.gridLayout.addWidget(self.txt_Documento, 1, 1, 1, 1)
+
         self.lb_Nome = QLabel(self.frm_Corpo)
         self.lb_Nome.setObjectName(u"lb_Nome")
         self.lb_Nome.setMinimumSize(QSize(0, 30))
         self.lb_Nome.setMaximumSize(QSize(16777215, 30))
 
         self.gridLayout.addWidget(self.lb_Nome, 0, 0, 1, 1)
-
-        self.txt_Documento = QLineEdit(self.frm_Corpo)
-        self.txt_Documento.setObjectName(u"txt_Documento")
-        self.txt_Documento.setMinimumSize(QSize(0, 30))
-        self.txt_Documento.setMaximumSize(QSize(16777215, 30))
-
-        self.gridLayout.addWidget(self.txt_Documento, 1, 1, 1, 1)
 
         self.lb_Documento = QLabel(self.frm_Corpo)
         self.lb_Documento.setObjectName(u"lb_Documento")
@@ -105,16 +105,22 @@ class Ui_Cad_Colaboradores(object):
 
         self.gridLayout.addWidget(self.lb_Documento, 1, 0, 1, 1, Qt.AlignmentFlag.AlignRight)
 
+        self.chk_Ativo = QCheckBox(self.frm_Corpo)
+        self.chk_Ativo.setObjectName(u"chk_Ativo")
+        self.chk_Ativo.setChecked(True)
+
+        self.gridLayout.addWidget(self.chk_Ativo, 1, 3, 1, 1)
+
         self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.gridLayout.addItem(self.horizontalSpacer_2, 1, 2, 1, 1)
+        self.gridLayout.addItem(self.horizontalSpacer_2, 1, 4, 1, 1)
 
         self.txt_Nome = QLineEdit(self.frm_Corpo)
         self.txt_Nome.setObjectName(u"txt_Nome")
         self.txt_Nome.setMinimumSize(QSize(0, 30))
         self.txt_Nome.setMaximumSize(QSize(16777215, 30))
 
-        self.gridLayout.addWidget(self.txt_Nome, 0, 1, 1, 2)
+        self.gridLayout.addWidget(self.txt_Nome, 0, 1, 1, 4)
 
 
         self.verticalLayout.addWidget(self.frm_Corpo)
@@ -176,6 +182,7 @@ class Ui_Cad_Colaboradores(object):
         self.bt_Novo.setText(QCoreApplication.translate("Cad_Colaboradores", u"+", None))
         self.lb_Nome.setText(QCoreApplication.translate("Cad_Colaboradores", u"Nome:", None))
         self.lb_Documento.setText(QCoreApplication.translate("Cad_Colaboradores", u"CPF:", None))
+        self.chk_Ativo.setText(QCoreApplication.translate("Cad_Colaboradores", u"Ativo", None))
         self.bt_Salvar.setText(QCoreApplication.translate("Cad_Colaboradores", u"Salvar", None))
         self.bt_Editar.setText(QCoreApplication.translate("Cad_Colaboradores", u"Editar", None))
         self.bt_Limpar.setText(QCoreApplication.translate("Cad_Colaboradores", u"Limpar", None))

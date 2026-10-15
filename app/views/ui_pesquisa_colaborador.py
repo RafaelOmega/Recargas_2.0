@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'pesquisa_colaboradorikLLUC.ui'
+## Form generated from reading UI file 'pesquisa_colaboradorhFjNPv.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -17,7 +17,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QDialog, QFrame, QHBoxLayout,
     QHeaderView, QLabel, QLineEdit, QPushButton,
-    QSizePolicy, QTableView, QVBoxLayout, QWidget)
+    QRadioButton, QSizePolicy, QTableView, QVBoxLayout,
+    QWidget)
 
 class Ui_Pesquisa_Colaborador(object):
     def setupUi(self, Pesquisa_Colaborador):
@@ -55,6 +56,21 @@ class Ui_Pesquisa_Colaborador(object):
 
         self.horizontalLayout.addWidget(self.txt_Pesquisa)
 
+        self.rb_Ativo = QRadioButton(self.frm_Filtro)
+        self.rb_Ativo.setObjectName(u"rb_Ativo")
+        self.rb_Ativo.setMinimumSize(QSize(0, 30))
+        self.rb_Ativo.setMaximumSize(QSize(16777215, 30))
+        self.rb_Ativo.setChecked(True)
+
+        self.horizontalLayout.addWidget(self.rb_Ativo)
+
+        self.rb_Inativo = QRadioButton(self.frm_Filtro)
+        self.rb_Inativo.setObjectName(u"rb_Inativo")
+        self.rb_Inativo.setMinimumSize(QSize(0, 30))
+        self.rb_Inativo.setMaximumSize(QSize(16777215, 30))
+
+        self.horizontalLayout.addWidget(self.rb_Inativo)
+
         self.bt_Pesquisa = QPushButton(self.frm_Filtro)
         self.bt_Pesquisa.setObjectName(u"bt_Pesquisa")
         self.bt_Pesquisa.setMinimumSize(QSize(0, 30))
@@ -90,6 +106,8 @@ class Ui_Pesquisa_Colaborador(object):
     def retranslateUi(self, Pesquisa_Colaborador):
         Pesquisa_Colaborador.setWindowTitle(QCoreApplication.translate("Pesquisa_Colaborador", u"Pesquisa Colaborador", None))
         self.lb_Pesquisa.setText(QCoreApplication.translate("Pesquisa_Colaborador", u"Pesquisar:", None))
+        self.rb_Ativo.setText(QCoreApplication.translate("Pesquisa_Colaborador", u"Ativos", None))
+        self.rb_Inativo.setText(QCoreApplication.translate("Pesquisa_Colaborador", u"Inativos", None))
         self.bt_Pesquisa.setText(QCoreApplication.translate("Pesquisa_Colaborador", u"Confirmar", None))
     # retranslateUi
 
