@@ -245,6 +245,7 @@
     </property>
     <addaction name="actionCad_Colaboradores"/>
     <addaction name="actionSaldo_BIZ"/>
+    <addaction name="actionUsuarios"/>
    </widget>
    <widget class="QMenu" name="menuLancamentos">
     <property name="title">
@@ -335,6 +336,11 @@
   <action name="actionRecarga_Colaborador">
    <property name="text">
     <string>Recarga por Colaborador</string>
+   </property>
+  </action>
+  <action name="actionUsuarios">
+   <property name="text">
+    <string>Usuarios</string>
    </property>
   </action>
  </widget>

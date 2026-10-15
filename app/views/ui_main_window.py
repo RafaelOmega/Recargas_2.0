@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'main_windowZGNJRj.ui'
+## Form generated from reading UI file 'main_windowHqYmBN.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -61,6 +61,8 @@ class Ui_MainWindow(object):
         self.actionSaldo_BIZ.setObjectName(u"actionSaldo_BIZ")
         self.actionRecarga_Colaborador = QAction(MainWindow)
         self.actionRecarga_Colaborador.setObjectName(u"actionRecarga_Colaborador")
+        self.actionUsuarios = QAction(MainWindow)
+        self.actionUsuarios.setObjectName(u"actionUsuarios")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
@@ -159,6 +161,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuRelatorios.menuAction())
         self.menuCadastros.addAction(self.actionCad_Colaboradores)
         self.menuCadastros.addAction(self.actionSaldo_BIZ)
+        self.menuCadastros.addAction(self.actionUsuarios)
         self.menuLancamentos.addAction(self.actionRecargas)
         self.menuRelatorios.addAction(self.actionRecarga_Colaborador)
 
@@ -184,6 +187,7 @@ class Ui_MainWindow(object):
         self.actionRecargas.setText(QCoreApplication.translate("MainWindow", u"Recargas", None))
         self.actionSaldo_BIZ.setText(QCoreApplication.translate("MainWindow", u"Saldo BIZ", None))
         self.actionRecarga_Colaborador.setText(QCoreApplication.translate("MainWindow", u"Recarga por Colaborador", None))
+        self.actionUsuarios.setText(QCoreApplication.translate("MainWindow", u"Usuarios", None))
         self.lb_Comandos.setText("")
         self.lb_Saldo_Conta.setText(QCoreApplication.translate("MainWindow", u"Saldo Conta:", None))
         self.lb_Versao.setText(QCoreApplication.translate("MainWindow", u"Vers\u00e3o 2.0.0", None))

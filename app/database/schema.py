@@ -9,6 +9,7 @@ Números automáticos vêm de SEQUENCEs do PostgreSQL:
   - seq_colaboradores_codigo -> colaboradores.codigo
   - seq_recargas_sequencia   -> recargas.sequencia
   - seq_saldo_conta_codigo   -> saldo_conta.codigo
+  - seq_usuarios_codigo      -> usuarios.codigo
 eliminando a race condition do MAX()+1 em uso multiusuário.
 Cada sequência é sincronizada com o maior valor já gravado
 (idempotente).
@@ -137,6 +138,45 @@ _COMANDOS = (
             PERFORM setval('seq_saldo_conta_codigo', v_max, true);
         END IF;
     END $$
+    """,
+    # ---------------- usuarios (acesso ao sistema) ----------------
+    """
+    CREATE TABLE IF NOT EXISTS usuarios (
+        id         SERIAL PRIMARY KEY,
+        codigo     VARCHAR(20) UNIQUE NOT NULL,
+        nome       VARCHAR(120) NOT NULL,
+        documento  VARCHAR(20) DEFAULT '',
+        login      VARCHAR(60) UNIQUE NOT NULL,
+        senha_hash VARCHAR(256) NOT NULL,
+        ativo      BOOLEAN NOT NULL DEFAULT TRUE
+    )
+    """,
+    """
+    CREATE SEQUENCE IF NOT EXISTS seq_usuarios_codigo
+        START WITH 1
+        INCREMENT BY 1
+        NO MINVALUE
+        NO MAXVALUE
+        NO CYCLE
+    """,
+    """
+    DO $$
+    DECLARE
+        v_max INTEGER;
+    BEGIN
+        SELECT COALESCE(MAX(CAST(codigo AS INTEGER)), 0)
+          INTO v_max
+          FROM usuarios
+         WHERE codigo ~ '^[0-9]+$';
+        IF v_max > 0 THEN
+            PERFORM setval('seq_usuarios_codigo', v_max, true);
+        END IF;
+    END $$
+    """,
+    # documento: migração idempotente de bases criadas antes
+    """
+    ALTER TABLE usuarios
+        ADD COLUMN IF NOT EXISTS documento VARCHAR(20) DEFAULT ''
     """,
 )
 
