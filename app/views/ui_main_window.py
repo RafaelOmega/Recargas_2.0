@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'main_windowHqYmBN.ui'
+## Form generated from reading UI file 'main_windowVuqqfb.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -71,17 +71,41 @@ class Ui_MainWindow(object):
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.mdiArea = QMdiArea(self.centralwidget)
         self.mdiArea.setObjectName(u"mdiArea")
+        self.mdiArea.setStyleSheet(u"QMdiArea#mdiArea {\n"
+"	background-color: #16222F;\n"
+"}")
 
         self.verticalLayout.addWidget(self.mdiArea)
 
         self.frm_StatusBar = QFrame(self.centralwidget)
         self.frm_StatusBar.setObjectName(u"frm_StatusBar")
+        self.frm_StatusBar.setStyleSheet(u"QFrame#frm_StatusBar {\n"
+"	background-color: #1F3B5B;\n"
+"	border: none;\n"
+"	border-top: 2px solid #2E5A8F;\n"
+"}\n"
+"QFrame#frm_StatusBar QLabel {\n"
+"	color: #D7E3F4;\n"
+"	background: transparent;\n"
+"}\n"
+"QFrame#frm_StatusBar QLabel#lb_Comandos {\n"
+"	color: #9FB8D8;\n"
+"}\n"
+"QFrame#frm_StatusBar QLabel#lb_Versao {\n"
+"	color: #8FA8C6;\n"
+"}\n"
+"QFrame#frm_StatusBar QDateEdit,\n"
+"QFrame#frm_StatusBar QTimeEdit {\n"
+"	background: transparent;\n"
+"	color: #B9CCE4;\n"
+"	border: none;\n"
+"}")
         self.frm_StatusBar.setFrameShape(QFrame.Shape.StyledPanel)
         self.frm_StatusBar.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout = QHBoxLayout(self.frm_StatusBar)
-        self.horizontalLayout.setSpacing(0)
+        self.horizontalLayout.setSpacing(10)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout.setContentsMargins(12, 4, 12, 4)
         self.lb_Comandos = QLabel(self.frm_StatusBar)
         self.lb_Comandos.setObjectName(u"lb_Comandos")
         self.lb_Comandos.setMinimumSize(QSize(0, 30))
@@ -102,8 +126,9 @@ class Ui_MainWindow(object):
 
         self.txt_Saldo_Conta = QLineEdit(self.frm_StatusBar)
         self.txt_Saldo_Conta.setObjectName(u"txt_Saldo_Conta")
-        self.txt_Saldo_Conta.setMinimumSize(QSize(120, 30))
-        self.txt_Saldo_Conta.setMaximumSize(QSize(120, 30))
+        self.txt_Saldo_Conta.setMinimumSize(QSize(150, 30))
+        self.txt_Saldo_Conta.setMaximumSize(QSize(150, 30))
+        self.txt_Saldo_Conta.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.txt_Saldo_Conta.setReadOnly(True)
 
         self.horizontalLayout.addWidget(self.txt_Saldo_Conta)
@@ -187,12 +212,20 @@ class Ui_MainWindow(object):
         self.actionRecargas.setText(QCoreApplication.translate("MainWindow", u"Recargas", None))
         self.actionSaldo_BIZ.setText(QCoreApplication.translate("MainWindow", u"Saldo BIZ", None))
         self.actionRecarga_Colaborador.setText(QCoreApplication.translate("MainWindow", u"Recarga por Colaborador", None))
-        self.actionUsuarios.setText(QCoreApplication.translate("MainWindow", u"Usuarios", None))
-        self.lb_Comandos.setText("")
+        self.actionUsuarios.setText(QCoreApplication.translate("MainWindow", u"Usu\u00e1rios", None))
         self.lb_Saldo_Conta.setText(QCoreApplication.translate("MainWindow", u"Saldo Conta:", None))
+#if QT_CONFIG(tooltip)
+        self.txt_Saldo_Conta.setToolTip(QCoreApplication.translate("MainWindow", u"Saldo da conta Biz (recargas - saldos)", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.dt_Data_Atual.setToolTip(QCoreApplication.translate("MainWindow", u"Data de hoje", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.dt_Hora_Atual.setToolTip(QCoreApplication.translate("MainWindow", u"Hora atual", None))
+#endif // QT_CONFIG(tooltip)
         self.lb_Versao.setText(QCoreApplication.translate("MainWindow", u"Vers\u00e3o 2.0.0", None))
         self.menuCadastros.setTitle(QCoreApplication.translate("MainWindow", u"Cadastros", None))
         self.menuLancamentos.setTitle(QCoreApplication.translate("MainWindow", u"Lan\u00e7amentos", None))
-        self.menuRelatorios.setTitle(QCoreApplication.translate("MainWindow", u"Relatorios", None))
+        self.menuRelatorios.setTitle(QCoreApplication.translate("MainWindow", u"Relat\u00f3rios", None))
     # retranslateUi
 
