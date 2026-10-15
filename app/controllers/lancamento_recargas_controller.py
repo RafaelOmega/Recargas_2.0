@@ -360,7 +360,19 @@ class LancamentoRecargasController(QWidget):
         dados = self._coletar_dados()
         try:
             if dados.get("sequencia"):
-                self._service.atualizar(dados)
+                if not self._service.atualizar(dados):
+                    # outro usuário excluiu a recarga enquanto a
+                    # edição estava aberta
+                    logger.warning(
+                        "Atualização sem efeito: recarga %s "
+                        "não existe mais", dados.get("sequencia"))
+                    QMessageBox.warning(
+                        self, "Atenção",
+                        "Recarga não encontrada — provavelmente foi "
+                        "excluída por outro usuário. A tela será limpa.")
+                    self._limpar_campos()
+                    self.ui.txt_Recargas.setFocus()
+                    return
             else:
                 recarga = self._service.salvar(dados)
                 # exibe a sequência gerada automaticamente
@@ -401,13 +413,24 @@ class LancamentoRecargasController(QWidget):
             return
 
         try:
-            self._service.excluir(int(sequencia))
+            excluido = self._service.excluir(int(sequencia))
         except Exception as exc:
             logger.exception("Falha ao excluir recarga")
             QMessageBox.critical(
                 self, "Erro",
                 f"Não foi possível excluir a recarga:"
                 f"\n{self._mensagem_erro(exc)}")
+            return
+        if not excluido:
+            # outro usuário já havia excluído
+            logger.warning("Exclusão sem efeito: recarga %s "
+                           "não existe mais", sequencia)
+            QMessageBox.warning(
+                self, "Atenção",
+                "Recarga não encontrada — provavelmente já foi "
+                "excluída por outro usuário.")
+            self._limpar_campos()
+            self.ui.txt_Recargas.setFocus()
             return
 
         logger.info("Recarga excluída: %s", sequencia)

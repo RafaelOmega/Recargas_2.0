@@ -7,6 +7,10 @@ do QMdiArea e manter data/hora e o saldo da conta na barra de status.
 Cada tela é uma chave em _TELAS; a factory do seu controller é
 registrada em _criadores. Enquanto o controller real não existir,
 um placeholder é exibido.
+
+Multiusuário: o saldo é recalculado no banco (nunca em cache) e o
+service é recriado automaticamente se a conexão morrer (queda de
+rede ou restart do PostgreSQL) — na próxima atualização ele volta.
 """
 from datetime import datetime
 
@@ -143,7 +147,16 @@ class MainWindowController(QMainWindow):
         self._timer_saldo.start(INTERVALO_SALDO_MS)
 
     def _atualizar_saldo_conta(self):
-        """Saldo da conta Biz = soma das recargas - soma dos saldos."""
+        """Saldo da conta Biz = soma das recargas - soma dos saldos.
+
+        Se a consulta falhar (conexão morta após queda de rede ou
+        restart do banco), o service é descartado: no próximo ciclo
+        um novo service — com conexão nova — é criado sozinho.
+        """
+        if self._service_saldo is None:
+            # recria o service (reconexão) — se a dependência existir
+            self._service_saldo = (SaldoContaService()
+                                   if SaldoContaService else None)
         if self._service_saldo is None:
             self.ui.txt_Saldo_Conta.setText("—")
             return
@@ -151,6 +164,8 @@ class MainWindowController(QMainWindow):
             saldo = self._service_saldo.saldo_atual()
         except Exception:
             logger.exception("Falha ao calcular o saldo da conta")
+            # conexão provavelmente morta: descarta para reconectar
+            self._service_saldo = None
             self.ui.txt_Saldo_Conta.setText("—")
             return
         self.ui.txt_Saldo_Conta.setText(_formatar_moeda(saldo))

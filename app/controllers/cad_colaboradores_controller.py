@@ -8,6 +8,10 @@ O código é automático (gerado no salvar): o campo txt_Codigo é
 somente leitura, exibindo o código do colaborador carregado/salvo.
 Navegação (Tab) em modo Z: esquerda para a direita e de cima
 para baixo — código/pesquisar/novo -> nome/documento/ativo -> CRUD.
+
+Multiusuário: atualizar/excluir retornam False quando o registro
+não existe mais (excluído por outro usuário) — a tela avisa e limpa
+em vez de fingir sucesso.
 """
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
@@ -28,6 +32,9 @@ ESTADO_INICIAL = "inicial"
 ESTADO_NOVO = "novo"
 ESTADO_VISUALIZACAO = "visualizacao"
 ESTADO_EDICAO = "edicao"
+
+_MSG_REGISTRO_SUMIU = ("Registro não encontrado — provavelmente foi "
+                       "excluído por outro usuário. A tela será limpa.")
 
 
 class CadColaboradoresController(QWidget):
@@ -190,7 +197,17 @@ class CadColaboradoresController(QWidget):
                 # exibe o código gerado automaticamente
                 self.ui.txt_Codigo.setText(colaborador.codigo)
             elif self._modo == ESTADO_EDICAO:
-                self._service.atualizar(dados)
+                if not self._service.atualizar(dados):
+                    # outro usuário excluiu o colaborador enquanto
+                    # a edição estava aberta
+                    logger.warning(
+                        "Atualização sem efeito: colaborador %s "
+                        "não existe mais", dados.get("codigo"))
+                    QMessageBox.warning(self, "Atenção",
+                                        _MSG_REGISTRO_SUMIU)
+                    self._limpar_campos()
+                    self.ui.txt_Codigo.setFocus()
+                    return
             else:
                 return
         except Exception as exc:
@@ -222,12 +239,22 @@ class CadColaboradoresController(QWidget):
         if resposta != QMessageBox.StandardButton.Yes:
             return
         try:
-            self._service.excluir(codigo)
+            excluido = self._service.excluir(codigo)
         except Exception as exc:
             logger.exception("Falha ao excluir colaborador")
             QMessageBox.critical(
                 self, "Erro",
                 f"Não foi possível excluir:\n{self._mensagem_erro(exc)}")
+            return
+        if not excluido:
+            # outro usuário já havia excluído
+            logger.warning("Exclusão sem efeito: colaborador %s "
+                           "não existe mais", codigo)
+            QMessageBox.warning(self, "Atenção",
+                                "Colaborador não encontrado — provavelmente "
+                                "já foi excluído por outro usuário.")
+            self._limpar_campos()
+            self.ui.txt_Codigo.setFocus()
             return
         logger.info("Colaborador excluído: %s", codigo)
         QMessageBox.information(
