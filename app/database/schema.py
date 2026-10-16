@@ -10,6 +10,7 @@ Números automáticos vêm de SEQUENCEs do PostgreSQL:
   - seq_recargas_sequencia   -> recargas.sequencia
   - seq_saldo_conta_codigo   -> saldo_conta.codigo
   - seq_usuarios_codigo      -> usuarios.codigo
+  - seq_caminhoes_codigo     -> caminhoes.codigo
 eliminando a race condition do MAX()+1 em uso multiusuário.
 Cada sequência é sincronizada com o maior valor já gravado
 (idempotente).
@@ -177,6 +178,40 @@ _COMANDOS = (
     """
     ALTER TABLE usuarios
         ADD COLUMN IF NOT EXISTS documento VARCHAR(20) DEFAULT ''
+    """,
+    # ---------------- caminhoes (frota) ----------------
+    """
+    CREATE TABLE IF NOT EXISTS caminhoes (
+        id     SERIAL PRIMARY KEY,
+        codigo VARCHAR(20) UNIQUE NOT NULL,
+        modelo VARCHAR(120) NOT NULL,
+        placa  VARCHAR(20) NOT NULL DEFAULT '',
+        ativo  BOOLEAN NOT NULL DEFAULT TRUE
+    )
+    """,
+    """
+    CREATE SEQUENCE IF NOT EXISTS seq_caminhoes_codigo
+        START WITH 1
+        INCREMENT BY 1
+        NO MINVALUE
+        NO MAXVALUE
+        NO CYCLE
+    """,
+    # sincroniza a sequência com o maior código numérico existente
+    # (sem efeito em banco novo, onde a sequência já começa em 1)
+    """
+    DO $$
+    DECLARE
+        v_max INTEGER;
+    BEGIN
+        SELECT COALESCE(MAX(CAST(codigo AS INTEGER)), 0)
+          INTO v_max
+          FROM caminhoes
+         WHERE codigo ~ '^[0-9]+$';
+        IF v_max > 0 THEN
+            PERFORM setval('seq_caminhoes_codigo', v_max, true);
+        END IF;
+    END $$
     """,
 )
 

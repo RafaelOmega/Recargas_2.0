@@ -284,6 +284,7 @@ QFrame#frm_StatusBar QTimeEdit {
     <addaction name="actionCad_Colaboradores"/>
     <addaction name="actionSaldo_BIZ"/>
     <addaction name="actionUsuarios"/>
+    <addaction name="actionCaminhoes"/>
    </widget>
    <widget class="QMenu" name="menuLancamentos">
     <property name="title">
@@ -385,6 +386,11 @@ QFrame#frm_StatusBar QTimeEdit {
   <action name="actionDash_Refeicao">
    <property name="text">
     <string>DashBoard Recargas</string>
+   </property>
+  </action>
+  <action name="actionCaminhoes">
+   <property name="text">
+    <string>Caminhoes</string>
    </property>
   </action>
  </widget>

@@ -7,7 +7,6 @@ tela ativa na barra de status.
 
 Cada tela é uma chave em _TELAS; a factory do seu controller é
 registrada em _criadores.
-
 Multiusuário: o saldo é recalculado no banco (nunca em cache) e o
 service é recriado automaticamente se a conexão morrer (queda de
 rede ou restart do PostgreSQL) — na próxima atualização ele volta.
@@ -17,6 +16,9 @@ from datetime import datetime
 from PySide6.QtCore import QDate, QTime, QTimer
 from PySide6.QtWidgets import QLabel, QMainWindow, QVBoxLayout, QWidget
 
+from app.controllers.cad_caminhoes_controller import (
+    CadCaminhoesController,
+)
 from app.controllers.cad_colaboradores_controller import (
     CadColaboradoresController,
 )
@@ -50,6 +52,7 @@ logger = get_logger("main_window")
 # Ao adicionar/renomear actions no Designer, ajuste apenas este dicionário.
 _TELAS = {
     "colaboradores": ("actionCad_Colaboradores", "Colaboradores"),
+    "caminhoes": ("actionCaminhoes", "Caminhões"),
     "usuarios": ("actionUsuarios", "Usuários"),
     "recargas": ("actionRecargas", "Lançamento de Recargas"),
     "saldo_biz": ("actionSaldo_BIZ", "Saldo BIZ"),
@@ -60,7 +63,6 @@ _TELAS = {
 
 # intervalo de atualização automática do saldo da conta (30 s)
 INTERVALO_SALDO_MS = 30_000
-
 # estilo do campo de saldo (chip sobre a barra azul da barra de status)
 _ESTILO_SALDO = (
     "QLineEdit{background:rgba(255,255,255,0.12);"
@@ -90,7 +92,6 @@ class MainWindowController(QMainWindow):
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
         self._criadores = {}   # chave -> factory do controller da tela
         self._subjanelas = {}  # chave -> QMdiSubWindow aberta
 
@@ -105,6 +106,8 @@ class MainWindowController(QMainWindow):
         logger.info("Janela principal iniciada")
 
         self._criadores["colaboradores"] = lambda pai: CadColaboradoresController(
+            pai)
+        self._criadores["caminhoes"] = lambda pai: CadCaminhoesController(
             pai)
         self._criadores["usuarios"] = lambda pai: CadUsuariosController(
             pai)
