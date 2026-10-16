@@ -6,10 +6,17 @@ botões, tab order, validações simples de formulário) — sem lógica
 de negócio nem acesso a dados. Dados via SaldoContaService.
 
 Máquina de estados (padrão do cadastro de colaboradores):
-  inicial      -> só "+" e "..." ativos
+inicial      -> só "+" e "..." ativos
   novo         -> campos liberados, Salvar grava (código automático)
   visualizacao -> registro carregado via pesquisa (somente leitura)
   edicao       -> "Editar" liberou os campos; Salvar atualiza
+
+O código é gerado automaticamente no salvar, mas o campo txt_Codigo
+fica HABILITADO no estado inicial como campo de busca: digitar um
+código e Enter carrega o lançamento direto do banco (mesmo resultado
+de selecionar na pesquisa); Enter com o campo vazio abre a pesquisa
+completa. Em novo/edição o campo volta a bloquear (o código é gerado
+ou é a chave do update).
 
 Valor em QDoubleSpinBox (dbs_Valor, prefixo "R$ "): o widget já
 garante numérico com 2 decimais — não há texto a validar/converter.
@@ -71,6 +78,7 @@ class CadSaldoContaController(QWidget):
         self._conectar_teclas()
         self._definir_tab_order()
         self._limpar_campos()
+        self.ui.txt_Codigo.setFocus()
 
     # ---------------- conexoes ----------------
 
@@ -83,8 +91,8 @@ class CadSaldoContaController(QWidget):
         self.ui.bt_Excluir.clicked.connect(self._excluir)
 
     def _conectar_teclas(self):
-        # código é automático: Enter no campo abre a pesquisa
-        self.ui.txt_Codigo.returnPressed.connect(self._pesquisar)
+        # Enter no código: com texto busca direto; vazio abre a pesquisa
+        self.ui.txt_Codigo.returnPressed.connect(self._enter_codigo)
         self._at_f2 = QShortcut(QKeySequence(Qt.Key.Key_F2), self)
         self._at_f2.activated.connect(self._novo)
 
@@ -102,7 +110,8 @@ class CadSaldoContaController(QWidget):
                          self.ui.bt_Novo)
         self.setTabOrder(self.ui.bt_Novo, self.ui.dt_Data)
         self.setTabOrder(self.ui.dt_Data, self.ui.dbs_Valor)
-        self.setTabOrder(self.ui.dbs_Valor, self.ui.bt_Salvar)
+        self.setTabOrder(self.ui.dbs_Valor,
+                         self.ui.bt_Salvar)
         self.setTabOrder(self.ui.bt_Salvar, self.ui.bt_Editar)
         self.setTabOrder(self.ui.bt_Editar, self.ui.bt_Limpar)
         self.setTabOrder(self.ui.bt_Limpar, self.ui.bt_Excluir)
@@ -110,7 +119,7 @@ class CadSaldoContaController(QWidget):
     # ---------------- estados da tela ----------------
 
     def _estado_inicial(self):
-        self.ui.txt_Codigo.setEnabled(False)  # código é automático
+        self.ui.txt_Codigo.setEnabled(True)   # campo de busca liberado
         self.ui.bt_Pesquisar_Saldo_Conta.setEnabled(True)
         self.ui.bt_Novo.setEnabled(True)
 
@@ -134,7 +143,7 @@ class CadSaldoContaController(QWidget):
         self.ui.bt_Pesquisar_Saldo_Conta.setEnabled(False)
 
     def _estado_visualizacao(self):
-        self.ui.txt_Codigo.setEnabled(False)
+        self.ui.txt_Codigo.setEnabled(False)  # evita alterar a chave
         self.ui.dt_Data.setEnabled(False)
         self.ui.dbs_Valor.setEnabled(False)
         self.ui.bt_Salvar.setEnabled(False)
@@ -174,6 +183,40 @@ class CadSaldoContaController(QWidget):
         self._modo = ESTADO_EDICAO
         self._estado_edicao()
         self.ui.dt_Data.setFocus()
+
+    def _enter_codigo(self):
+        """Enter no código: com texto busca direto; vazio abre pesquisa."""
+        if self.ui.txt_Codigo.text().strip():
+            self._buscar_por_codigo()
+        else:
+            self._pesquisar()
+
+    def _buscar_por_codigo(self):
+        """Carrega o lançamento do código digitado direto do banco."""
+        if self._service is None:
+            QMessageBox.critical(
+                self, "Erro", "Service de saldo da conta indisponível.")
+            return
+        codigo = self.ui.txt_Codigo.text().strip()
+        if not codigo:
+            return
+        try:
+            saldo = self._service.buscar_por_codigo(codigo)
+        except Exception as exc:
+            logger.exception("Falha ao buscar lançamento %s", codigo)
+            QMessageBox.critical(
+                self, "Erro",
+                f"Não foi possível buscar o lançamento:"
+                f"\n{mensagem_erro(exc)}")
+            return
+        if saldo is None:
+            QMessageBox.information(
+                self, "Não encontrado",
+                f"Lançamento {codigo} não encontrado.")
+            self.ui.txt_Codigo.setFocus()
+            self.ui.txt_Codigo.selectAll()
+            return
+        self._carregar(saldo)
 
     def _pesquisar(self):
         from app.controllers.pesquisa_saldo_conta_controller import (
