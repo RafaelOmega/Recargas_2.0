@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Ponto de entrada do sistema Recargas."""
 import ctypes
+import os
 import sys
 
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 from app.controllers.carregamento_controller import CarregamentoController
@@ -15,6 +17,16 @@ from app.utils.logger import get_logger, setup_logging
 from app.utils.theme import aplicar_tema
 
 logger = get_logger("main")
+
+# WebEngine (dashboard Power BI): sem aceleração de GPU, sem processo
+# de GPU separado e sem sandbox — evita tela branca em máquinas/RDP
+# sem suporte adequado. O --no-sandbox é necessário quando o app roda
+# de unidade de rede: o sandbox do Chromium não sobe em caminho de rede.
+os.environ.setdefault(
+    "QTWEBENGINE_CHROMIUM_FLAGS",
+    "--disable-gpu --disable-gpu-compositing "
+    "--in-process-gpu --no-sandbox",
+)
 
 
 def _definir_app_id():
@@ -44,6 +56,11 @@ def main() -> int:
     logger.info("Iniciando sistema Recargas")
 
     _definir_app_id()
+
+    # exigido pelo Qt WebEngine: definir ANTES de criar o QApplication,
+    # senão o QWebEngineView fica em branco
+    QCoreApplication.setAttribute(
+        Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
 
     app = QApplication(sys.argv)
     aplicar_tema(app)
