@@ -5,11 +5,12 @@ Colunas: Código, Data, Valor. Ordenação padrão: Código DESCENDENTE
 (numérica). O valor de ordenação fica no Qt.UserRole (papel livre,
 separado do texto) e o sortRole do modelo aponta para ele:
 exibição no DisplayRole, ordenação (padrão e clique no cabeçalho)
-pelo UserRole. Duplo clique ou Confirmar devolve o registro
-selecionado (saldo_selecionado()).
+pelo UserRole. Duplo clique, Enter na grade ou Confirmar devolvem
+o registro selecionado (saldo_selecionado()).
 """
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QStandardItem, QStandardItemModel
+from PySide6.QtGui import (QKeySequence, QShortcut, QStandardItem,
+                           QStandardItemModel)
 from PySide6.QtWidgets import QDialog, QMessageBox
 
 from app.models.saldo_conta import SaldoConta
@@ -62,6 +63,10 @@ class PesquisaSaldoContaController(QDialog):
         self.ui.bt_Pesquisa.clicked.connect(self._confirmar)
         self.ui.txt_Pesquisa.returnPressed.connect(self._pesquisar)
         self.ui.tb_Saldo.doubleClicked.connect(self.accept)
+        # Enter na grade confirma como o duplo clique
+        self._at_enter_grade = QShortcut(
+            QKeySequence(Qt.Key.Key_Return), self.ui.tb_Saldo)
+        self._at_enter_grade.activated.connect(self._confirmar)
 
         self._definir_tab_order()
 
@@ -151,6 +156,6 @@ def _para_data_texto(data) -> str:
 
 
 def _para_valor_texto(valor: float) -> str:
-    """Float -> texto no padrão brasileiro (1234.5 -> '1.234,50')."""
+    """Float -> '1.234,56' (padrão brasileiro, sem prefixo)."""
     texto = f"{valor:,.2f}".replace(",", "X").replace(".", ",")
     return texto.replace("X", ".")

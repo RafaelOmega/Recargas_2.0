@@ -15,11 +15,14 @@ sobrescreve o texto exibido. Por isso o valor de ordenação fica no
 Qt.UserRole (papel livre, separado do texto) e o sortRole do modelo
 aponta para ele: exibição no DisplayRole, ordenação (padrão e clique
 no cabeçalho) pelo UserRole.
+
+Enter na grade confirma a seleção (como o duplo clique).
 """
 from datetime import date, datetime
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QStandardItem, QStandardItemModel
+from PySide6.QtGui import (QKeySequence, QShortcut, QStandardItem,
+                           QStandardItemModel)
 from PySide6.QtWidgets import QDialog, QMessageBox
 
 from app.models.recarga import Recarga
@@ -66,11 +69,14 @@ class PesquisaRecargasController(QDialog):
         self._timer_filtro = QTimer(self)
         self._timer_filtro.setSingleShot(True)
         self._timer_filtro.timeout.connect(self._pesquisar)
-
         self.ui.txt_Pesquisa.textChanged.connect(self._agendar_filtro)
         self.ui.bt_Pesquisa.clicked.connect(self._pesquisar)
         self.ui.txt_Pesquisa.returnPressed.connect(self._pesquisar)
         self.ui.tb_Recargas.doubleClicked.connect(self.accept)
+        # Enter na grade confirma como o duplo clique
+        self._at_enter_grade = QShortcut(
+            QKeySequence(Qt.Key.Key_Return), self.ui.tb_Recargas)
+        self._at_enter_grade.activated.connect(self.accept)
 
         self._definir_tab_order()
 
@@ -92,13 +98,7 @@ class PesquisaRecargasController(QDialog):
 
     @staticmethod
     def _item_ordenavel(texto: str, valor_ordenacao) -> QStandardItem:
-        """Item que exibe texto mas ordena pelo valor informado.
-
-        O valor de ordenação vai no Qt.UserRole: no QStandardItem o
-        EditRole compartilha armazenamento com o DisplayRole e
-        sobrescreveria o texto exibido. O sortRole do modelo aponta
-        para o UserRole.
-        """
+        """Item que exibe texto mas ordena pelo valor informado."""
         item = QStandardItem(texto)
         item.setData(valor_ordenacao, Qt.ItemDataRole.UserRole)
         return item

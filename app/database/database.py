@@ -12,6 +12,10 @@ from app.utils.logger import get_logger
 
 logger = get_logger("database")
 
+# timeout de conexão (s): evita travar o app por minutos quando o
+# servidor está inacessível (rede fora, PostgreSQL parado)
+_TIMEOUT_CONEXAO_S = 5
+
 
 def _config() -> dict:
     return {
@@ -20,6 +24,7 @@ def _config() -> dict:
         "dbname": os.getenv("DB_NAME5", ""),
         "user": os.getenv("DB_USER", ""),
         "password": os.getenv("DB_PASSWORD", ""),
+        "connect_timeout": _TIMEOUT_CONEXAO_S,
     }
 
 

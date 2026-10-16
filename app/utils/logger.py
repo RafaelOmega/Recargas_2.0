@@ -5,8 +5,12 @@ import sys
 from datetime import datetime
 
 if getattr(sys, "frozen", False):
-    # Empacotado (PyInstaller) — logs ao lado do .exe
-    BASE_DIR = os.path.dirname(sys.executable)
+    # Empacotado (PyInstaller) — logs no perfil LOCAL do usuário
+    # (%LOCALAPPDATA%\Recargas\logs): cada máquina grava o seu, sem
+    # disputa de arquivo na unidade de rede compartilhada (e sem
+    # quebrar se o share for somente leitura).
+    _base = os.getenv("LOCALAPPDATA") or os.path.expanduser("~")
+    BASE_DIR = os.path.join(_base, "Recargas")
 else:
     # Desenvolvimento — logs na raiz do projeto
     BASE_DIR = os.path.dirname(os.path.dirname(

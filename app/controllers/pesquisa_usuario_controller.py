@@ -5,9 +5,11 @@ Filtro por código, nome, CPF ou login (debounce 300ms) + radio
 buttons: Ativos (padrão) / Inativos — trocar o radio refaz a
 pesquisa. Navegação (Tab) em modo Z: pesquisa -> Ativos -> Inativos
 -> Confirmar -> grade. Ordenação padrão: coluna Nome (ascendente).
+Enter na grade confirma a seleção (como o duplo clique).
 """
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QStandardItem, QStandardItemModel
+from PySide6.QtGui import (QKeySequence, QShortcut, QStandardItem,
+                           QStandardItemModel)
 from PySide6.QtWidgets import QDialog, QMessageBox
 
 from app.models.usuario import Usuario
@@ -66,6 +68,10 @@ class PesquisaUsuarioController(QDialog):
         self.ui.bt_Pesquisa.clicked.connect(self._confirmar)
         self.ui.txt_Pesquisa.returnPressed.connect(self._pesquisar)
         self.ui.tb_Usuario.doubleClicked.connect(self.accept)
+        # Enter na grade confirma como o duplo clique
+        self._at_enter_grade = QShortcut(
+            QKeySequence(Qt.Key.Key_Return), self.ui.tb_Usuario)
+        self._at_enter_grade.activated.connect(self._confirmar)
 
         self._definir_tab_order()
 

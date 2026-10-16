@@ -16,9 +16,9 @@ Fluxo mestre-detalhe:
   - "..." abre a pesquisa e carrega a recarga selecionada;
   - "Abrir Recarga" habilita o fluxo próprio dos itens (em registro
     novo E na edição): cada item é confirmado em memória (grade) com
-    o botão Confirmar; duplo clique num item da grade o recarrega nos
-    campos para edição (o Confirmar atualiza a linha em vez de
-    adicionar outra);
+    o botão Confirmar; duplo clique OU Enter num item da grade o
+    recarrega nos campos para edição (o Confirmar atualiza a linha
+    em vez de adicionar outra);
   - "Sair Recarga" finaliza o lançamento dos itens e libera o
     bt_Salvar — enquanto a recarga está aberta, salvar é bloqueado;
   - Salvar grava cabeçalho e itens de uma vez (na edição os itens
@@ -38,8 +38,8 @@ desabilitados e são pulados pelo Qt.
 from datetime import date
 
 from PySide6.QtCore import QDate, Qt
-from PySide6.QtGui import QKeySequence, QShortcut, QStandardItem
-from PySide6.QtGui import QStandardItemModel
+from PySide6.QtGui import (QKeySequence, QShortcut, QStandardItem,
+                           QStandardItemModel)
 from PySide6.QtWidgets import QMessageBox, QWidget
 
 from app.models.colaborador import Colaborador
@@ -138,6 +138,10 @@ class LancamentoRecargasController(QWidget):
         self._at_f2.activated.connect(self._novo)
         # duplo clique na grade carrega o item para edição
         self.ui.tb_Itens.doubleClicked.connect(self._carregar_item_edicao)
+        # Enter na grade carrega o item para edição (como o duplo clique)
+        self._at_enter_grade = QShortcut(
+            QKeySequence(Qt.Key.Key_Return), self.ui.tb_Itens)
+        self._at_enter_grade.activated.connect(self._enter_grade_itens)
         # código do colaborador: Enter resolve; digitar invalida a seleção
         self.ui.txt_Cod_Colaborador.returnPressed.connect(
             self._buscar_colaborador_por_codigo)
@@ -497,16 +501,21 @@ class LancamentoRecargasController(QWidget):
         self._colaborador_selecionado = None
         self.ui.txt_Nome.clear()
 
-    def _buscar_colaborador_por_codigo(self):
-        """Enter no código: com texto resolve; vazio abre a pesquisa."""
+    def _buscar_colaborador_por_codigo(self,
+                                       avisar: bool = True) -> Colaborador | None:
+        """Enter no código: com texto resolve; vazio abre a pesquisa.
+
+        avisar=False (chamada interna, ex.: Confirmar item) resolve em
+        silêncio para que a validação exiba UM único aviso.
+        """
         codigo = self.ui.txt_Cod_Colaborador.text().strip()
         if not codigo:
             self._pesquisar_colaborador()
-            return
+            return self._colaborador_selecionado
         if self._colaborador_service is None:
             QMessageBox.critical(
                 self, "Erro", "Service de colaboradores indisponível.")
-            return
+            return None
         try:
             colaborador = self._colaborador_service.buscar_por_codigo(
                 codigo)
@@ -515,15 +524,17 @@ class LancamentoRecargasController(QWidget):
             QMessageBox.critical(
                 self, "Erro",
                 f"Não foi possível buscar o colaborador:\n{exc}")
-            return
+            return None
         if colaborador is None:
-            QMessageBox.warning(
-                self, "Atenção",
-                f"Colaborador '{codigo}' não encontrado.")
+            if avisar:
+                QMessageBox.warning(
+                    self, "Atenção",
+                    f"Colaborador '{codigo}' não encontrado.")
             self._colaborador_selecionado = None
             self.ui.txt_Nome.clear()
-            return
+            return None
         self._aplicar_colaborador(colaborador)
+        return colaborador
 
     def _pesquisar_colaborador(self):
         """'...' abre a pesquisa de colaboradores e aplica o escolhido."""
@@ -582,8 +593,8 @@ class LancamentoRecargasController(QWidget):
         colaborador = self._colaborador_selecionado
         if colaborador is None and self.ui.txt_Cod_Colaborador.text().strip():
             # código digitado sem Enter: tenta resolver antes de validar
-            self._buscar_colaborador_por_codigo()
-            colaborador = self._colaborador_selecionado
+            # (sem avisar aqui: a validação abaixo exibe UM único aviso)
+            colaborador = self._buscar_colaborador_por_codigo(avisar=False)
         if colaborador is None:
             QMessageBox.warning(
                 self, "Atenção",
@@ -616,6 +627,10 @@ class LancamentoRecargasController(QWidget):
         self._atualizar_total()
         self._limpar_item()
         self.ui.txt_Cod_Colaborador.setFocus()
+
+    def _enter_grade_itens(self):
+        """Enter na grade: recarrega o item selecionado para edição."""
+        self._carregar_item_edicao(self.ui.tb_Itens.currentIndex())
 
     def _carregar_item_edicao(self, indice):
         """Duplo clique na grade: recarrega o item nos campos."""
@@ -651,6 +666,7 @@ class LancamentoRecargasController(QWidget):
         elif self._item_em_edicao is not None and self._item_em_edicao > linha:
             self._item_em_edicao -= 1
         self._atualizar_total()
+        self.ui.txt_Cod_Colaborador.setFocus()
 
     def _limpar_item(self):
         self._colaborador_selecionado = None
