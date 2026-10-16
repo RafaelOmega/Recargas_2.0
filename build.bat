@@ -99,6 +99,11 @@ REM
 REM --onefile: gera UM UNICO .exe em dist\. Ao executar, o PyInstaller
 REM extrai os recursos (icone, styles) para uma pasta temporaria
 REM (sys._MEIPASS) — o icons.py ja trata isso.
+REM
+REM WebEngine (dashboard Power BI): --collect-all garante que o
+REM QtWebEngineProcess.exe, os recursos do Chromium (.pak, icudtl.dat)
+REM e as locales entrem no exe. Sem isso o dashboard abre em branco
+REM no exe mesmo funcionando no Python.
 echo Iniciando build...
 pyinstaller ^
   --noconfirm ^
@@ -115,6 +120,8 @@ pyinstaller ^
   --hidden-import="sqlalchemy.dialects.postgresql" ^
   --hidden-import="sqlalchemy.dialects.postgresql.psycopg2" ^
   --collect-submodules="app" ^
+  --collect-all PySide6.QtWebEngineWidgets ^
+  --collect-all PySide6.QtWebEngineCore ^
   "%ENTRY_POINT%"
 
 if errorlevel 1 (
