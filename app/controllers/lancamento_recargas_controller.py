@@ -6,9 +6,9 @@ Operações de dados são delegadas ao RecargaService (cabeçalho + itens
 na mesma transação) e ao ColaboradorService (seleção de colaborador).
 
 Seleção de colaborador por código: digite o código em
-txt_Cod_Colaborador e pressione Enter, ou clique em "..." para abrir
-a pesquisa de colaboradores. O nome é preenchido automaticamente em
-txt_Nome (somente leitura).
+txt_Cod_Colaborador e pressione Enter (campo vazio + Enter abre a
+pesquisa de colaboradores), ou clique em "..." para abrir a pesquisa.
+O nome é preenchido automaticamente em txt_Nome (somente leitura).
 
 Fluxo mestre-detalhe:
   - "+" prepara uma nova recarga: escolhe a data e clica em
@@ -24,14 +24,16 @@ Fluxo mestre-detalhe:
   - Salvar grava cabeçalho e itens de uma vez (na edição os itens
     são substituídos).
 
-A sequência é automática (gerada no salvar): o campo txt_Recargas é
-somente leitura. O benefício é fixo em "Refeição" (padrão do banco).
+A sequência é automática (gerada no salvar), mas o campo txt_Recargas
+fica HABILITADO no estado inicial como campo de busca: digitar uma
+sequência e Enter carrega a recarga direto do banco (mesmo resultado
+de selecionar na pesquisa); Enter com o campo vazio abre a pesquisa
+completa. Em novo/edição o campo volta a bloquear (a sequência é
+gerada ou é a chave do update).
 
-Navegação (Tab) em modo Z: esquerda para a direita e de cima para
-baixo. Com a recarga aberta, o Z efetivo percorre apenas o fluxo
-próprio dos itens (código -> pesquisa -> nome -> carga -> sem carga
--> valor -> confirmar -> grade -> limpar -> excluir -> sair), pois
-os demais widgets estão desabilitados e são pulados pelo Qt.
+Navegação (Tab) em modo Z: esquerda para a direita e de cima
+para baixo — com a recarga aberta, os demais widgets estão
+desabilitados e são pulados pelo Qt.
 """
 from datetime import date
 
@@ -71,7 +73,6 @@ COLUNA_STRETCH_ITENS = 0
 
 
 class LancamentoRecargasController(QWidget):
-
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -90,7 +91,6 @@ class LancamentoRecargasController(QWidget):
         self._colaboradores = []                 # cadastro p/ localizar snapshot
         self._colaborador_selecionado: Colaborador | None = None
 
-        self.ui.txt_Recargas.setReadOnly(True)
         self.ui.txt_Total.setReadOnly(True)
         self.ui.txt_Nome.setReadOnly(True)  # nome vem do código/pesquisa
         self.ui.dbs_Valor.setDecimals(2)
@@ -102,6 +102,7 @@ class LancamentoRecargasController(QWidget):
         self._definir_tab_order()
         self._carregar_colaboradores()
         self._limpar_campos()
+        self.ui.txt_Recargas.setFocus()
 
     # ---------------- configuracao ----------------
 
@@ -131,8 +132,8 @@ class LancamentoRecargasController(QWidget):
         self.ui.bt_Excluir.clicked.connect(self._excluir)
 
     def _conectar_teclas(self):
-        # sequência é automática: Enter no campo abre a pesquisa
-        self.ui.txt_Recargas.returnPressed.connect(self._pesquisar)
+        # Enter na sequência: com texto busca direto; vazio abre a pesquisa
+        self.ui.txt_Recargas.returnPressed.connect(self._enter_recargas)
         self._at_f2 = QShortcut(QKeySequence(Qt.Key.Key_F2), self)
         self._at_f2.activated.connect(self._novo)
         # duplo clique na grade carrega o item para edição
@@ -189,7 +190,7 @@ class LancamentoRecargasController(QWidget):
         self.ui.bt_Sair_Recarga.setEnabled(habilitar)
 
     def _estado_inicial(self):
-        self.ui.txt_Recargas.setEnabled(False)  # sequência é automática
+        self.ui.txt_Recargas.setEnabled(True)   # campo de busca liberado
         self.ui.bt_Pesquisar_Recargas.setEnabled(True)
         self.ui.bt_Novo.setEnabled(True)
 
@@ -212,7 +213,6 @@ class LancamentoRecargasController(QWidget):
         self.ui.dt_Data.setDate(QDate.currentDate())
         self.ui.bt_Abrir_Recargas.setEnabled(True)
         self._area_itens(False)  # liberada ao clicar em Abrir Recarga
-
         self.ui.bt_Salvar.setEnabled(False)  # só após "Sair Recarga"
         self.ui.bt_Editar.setEnabled(False)
         self.ui.bt_Excluir.setEnabled(False)
@@ -257,7 +257,6 @@ class LancamentoRecargasController(QWidget):
         self.ui.dt_Data.setEnabled(False)
         self.ui.bt_Abrir_Recargas.setEnabled(False)
         self._area_itens(False)
-
         self.ui.bt_Salvar.setEnabled(False)
         self.ui.bt_Editar.setEnabled(True)
         self.ui.bt_Excluir.setEnabled(True)
@@ -341,6 +340,44 @@ class LancamentoRecargasController(QWidget):
             if recarga:
                 self._preencher(recarga)
 
+    def _enter_recargas(self):
+        """Enter na sequência: com texto busca direto; vazio abre pesquisa."""
+        if self.ui.txt_Recargas.text().strip():
+            self._buscar_recarga_por_sequencia()
+        else:
+            self._pesquisar()
+
+    def _buscar_recarga_por_sequencia(self):
+        """Carrega a recarga da sequência digitada direto do banco."""
+        if self._service is None:
+            QMessageBox.critical(
+                self, "Erro", "Service de recargas indisponível.")
+            return
+        texto = self.ui.txt_Recargas.text().strip()
+        if not texto.isdigit():
+            QMessageBox.warning(
+                self, "Atenção", "Informe uma sequência numérica.")
+            self.ui.txt_Recargas.setFocus()
+            self.ui.txt_Recargas.selectAll()
+            return
+        try:
+            recarga = self._service.buscar_por_sequencia(int(texto))
+        except Exception as exc:
+            logger.exception("Falha ao buscar recarga %s", texto)
+            QMessageBox.critical(
+                self, "Erro",
+                f"Não foi possível buscar a recarga:"
+                f"\n{self._mensagem_erro(exc)}")
+            return
+        if recarga is None:
+            QMessageBox.information(
+                self, "Não encontrado",
+                f"Recarga {texto} não encontrada.")
+            self.ui.txt_Recargas.setFocus()
+            self.ui.txt_Recargas.selectAll()
+            return
+        self._preencher(recarga)
+
     def _validar_obrigatorios(self) -> bool:
         if self._modelo.rowCount() == 0:
             QMessageBox.warning(
@@ -406,7 +443,8 @@ class LancamentoRecargasController(QWidget):
         resposta = QMessageBox.question(
             self, "Confirmar exclusão",
             f"Excluir a recarga '{sequencia}' e todos os seus itens?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes |
+            QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
         if resposta != QMessageBox.StandardButton.Yes:
@@ -460,9 +498,10 @@ class LancamentoRecargasController(QWidget):
         self.ui.txt_Nome.clear()
 
     def _buscar_colaborador_por_codigo(self):
-        """Enter no campo de código: resolve e preenche o nome."""
+        """Enter no código: com texto resolve; vazio abre a pesquisa."""
         codigo = self.ui.txt_Cod_Colaborador.text().strip()
         if not codigo:
+            self._pesquisar_colaborador()
             return
         if self._colaborador_service is None:
             QMessageBox.critical(
@@ -690,6 +729,8 @@ class LancamentoRecargasController(QWidget):
                 QStandardItem(item.sem_carga or ""),
                 QStandardItem(self._formatar_valor(item.valor)),
             ])
+        ajustar_larguras(self.ui.tb_Itens,
+                         coluna_stretch=COLUNA_STRETCH_ITENS)
         self._atualizar_total()
         self._modo = ESTADO_VISUALIZACAO
         self._estado_visualizacao()
