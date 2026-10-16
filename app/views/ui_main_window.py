@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'main_windowHDMKlK.ui'
+## Form generated from reading UI file 'main_windowNVOzxg.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -220,7 +220,7 @@ class Ui_MainWindow(object):
         self.actionRecarga_Colaborador.setText(QCoreApplication.translate("MainWindow", u"Recarga por Colaborador", None))
         self.actionUsuarios.setText(QCoreApplication.translate("MainWindow", u"Usu\u00e1rios", None))
         self.actionDash_Refeicao.setText(QCoreApplication.translate("MainWindow", u"DashBoard Recargas", None))
-        self.actionCaminhoes.setText(QCoreApplication.translate("MainWindow", u"Caminhoes", None))
+        self.actionCaminhoes.setText(QCoreApplication.translate("MainWindow", u"Caminh\u00f5es", None))
         self.lb_Saldo_Conta.setText(QCoreApplication.translate("MainWindow", u"Saldo Conta:", None))
 #if QT_CONFIG(tooltip)
         self.txt_Saldo_Conta.setToolTip(QCoreApplication.translate("MainWindow", u"Saldo da conta Biz (recargas - saldos)", None))

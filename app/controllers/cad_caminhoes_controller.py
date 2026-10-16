@@ -4,8 +4,12 @@
 Responsabilidade: APENAS controle de tela (botões, campos, navegação).
 Operações de dados são delegadas ao CaminhaoService.
 
-O código é automático (gerado no salvar): o campo txt_Codigo é
-somente leitura, exibindo o código do caminhão carregado/salvo.
+O código é gerado automaticamente no salvar, mas o campo txt_Codigo
+fica HABILITADO no estado inicial como campo de busca: digitar um
+código e Enter carrega o caminhão direto do banco (mesmo resultado
+de selecionar na pesquisa); Enter com o campo vazio abre a pesquisa
+completa. Em novo/edição o campo volta a bloquear (o código é gerado
+ou é a chave do update).
 Navegação (Tab) em modo Z: esquerda para a direita e de cima
 para baixo — código/pesquisar/novo -> modelo/placa/ativo -> CRUD.
 
@@ -57,6 +61,7 @@ class CadCaminhoesController(QWidget):
         self._conectar_teclas()
         self._definir_tab_order()
         self._limpar_campos()
+        self.ui.txt_Codigo.setFocus()
 
     # ---------------- conexões ----------------
 
@@ -69,8 +74,8 @@ class CadCaminhoesController(QWidget):
         self.ui.bt_Excluir.clicked.connect(self._excluir)
 
     def _conectar_teclas(self):
-        # código é automático: Enter no campo abre a pesquisa
-        self.ui.txt_Codigo.returnPressed.connect(self._pesquisar)
+        # Enter no código: com texto busca direto; vazio abre a pesquisa
+        self.ui.txt_Codigo.returnPressed.connect(self._enter_codigo)
         self._at_f2 = QShortcut(QKeySequence(Qt.Key.Key_F2), self)
         self._at_f2.activated.connect(self._novo)
 
@@ -96,7 +101,7 @@ class CadCaminhoesController(QWidget):
     # ---------------- estados da tela ----------------
 
     def _estado_inicial(self):
-        self.ui.txt_Codigo.setEnabled(False)  # código é automático
+        self.ui.txt_Codigo.setEnabled(True)   # campo de busca liberado
         self.ui.bt_Pesquisar_Caminhoes.setEnabled(True)
         self.ui.bt_Novo.setEnabled(True)
 
@@ -122,7 +127,7 @@ class CadCaminhoesController(QWidget):
         self.ui.bt_Pesquisar_Caminhoes.setEnabled(False)
 
     def _estado_visualizacao(self):
-        self.ui.txt_Codigo.setEnabled(False)
+        self.ui.txt_Codigo.setEnabled(False)  # evita alterar a chave
         self.ui.txt_Modelo.setEnabled(False)
         self.ui.txt_Placa.setEnabled(False)
         self.ui.chk_Ativo.setEnabled(False)
@@ -164,6 +169,40 @@ class CadCaminhoesController(QWidget):
         self._modo = ESTADO_EDICAO
         self._estado_edicao()
         self.ui.txt_Modelo.setFocus()
+
+    def _enter_codigo(self):
+        """Enter no código: com texto busca direto; vazio abre pesquisa."""
+        if self.ui.txt_Codigo.text().strip():
+            self._buscar_por_codigo()
+        else:
+            self._pesquisar()
+
+    def _buscar_por_codigo(self):
+        """Carrega o caminhão do código digitado direto do banco."""
+        if self._service is None:
+            QMessageBox.critical(
+                self, "Erro", "Service de caminhões indisponível.")
+            return
+        codigo = self.ui.txt_Codigo.text().strip()
+        if not codigo:
+            return
+        try:
+            caminhao = self._service.buscar_por_codigo(codigo)
+        except Exception as exc:
+            logger.exception("Falha ao buscar caminhão %s", codigo)
+            QMessageBox.critical(
+                self, "Erro",
+                f"Não foi possível buscar o caminhão:"
+                f"\n{self._mensagem_erro(exc)}")
+            return
+        if caminhao is None:
+            QMessageBox.information(
+                self, "Não encontrado",
+                f"Caminhão {codigo} não encontrado.")
+            self.ui.txt_Codigo.setFocus()
+            self.ui.txt_Codigo.selectAll()
+            return
+        self._preencher(caminhao)
 
     def _pesquisar(self):
         from app.controllers.pesquisa_caminhoes_controller import (

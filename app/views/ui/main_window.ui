@@ -390,7 +390,7 @@ QFrame#frm_StatusBar QTimeEdit {
   </action>
   <action name="actionCaminhoes">
    <property name="text">
-    <string>Caminhoes</string>
+    <string>Caminhões</string>
    </property>
   </action>
  </widget>
