@@ -14,11 +14,10 @@ Números automáticos vêm de SEQUENCEs do PostgreSQL:
 eliminando a race condition do MAX()+1 em uso multiusuário.
 Cada sequência é sincronizada com o maior valor já gravado
 (idempotente).
-
-Last-write-wins: as 4 tabelas de cadastro ganham atualizado_em
-(versão do registro) e pelo_usuario (último escritor) — migração
-idempotente; registros antigos ficam com atualizado_em NULL, que
-casa com a carga None (sem falso conflito na primeira edição).
+Last-write-wins: as 4 tabelas de cadastro E as recargas ganham
+atualizado_em (versão do registro) e pelo_usuario (último escritor) —
+migração idempotente; registros antigos ficam com atualizado_em NULL,
+que casa com a carga None (sem falso conflito na primeira edição).
 """
 from app.database.database import get_connection
 from app.utils.logger import get_logger
@@ -119,6 +118,12 @@ _COMANDOS = (
     """
     CREATE INDEX IF NOT EXISTS idx_recargas_itens_recarga
         ON recargas_itens (recarga_id)
+    """,
+    # last-write-wins: versão do registro + último escritor (recargas)
+    """
+    ALTER TABLE recargas
+        ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS pelo_usuario VARCHAR(60) DEFAULT ''
     """,
     # ---------------- saldo_conta (conta Biz) ----------------
     """

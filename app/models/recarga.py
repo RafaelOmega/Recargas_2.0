@@ -50,6 +50,9 @@ class Recarga:
     data: date = field(default_factory=date.today)
     descricao: str = ""
     itens: list[RecargaItem] = field(default_factory=list)
+    # last-write-wins: versão do registro (None = nunca atualizado)
+    atualizado_em: datetime | None = None
+    pelo_usuario: str = ""
 
     @classmethod
     def from_dict(cls, dados: dict) -> "Recarga":
@@ -69,6 +72,8 @@ class Recarga:
             data=data,
             descricao=dados.get("descricao", "") or "",
             itens=itens,
+            atualizado_em=dados.get("atualizado_em"),
+            pelo_usuario=str(dados.get("pelo_usuario", "") or ""),
         )
 
     def to_dict(self) -> dict:
@@ -78,4 +83,6 @@ class Recarga:
             "data": self.data,
             "descricao": self.descricao,
             "itens": [i.to_dict() for i in self.itens],
+            "atualizado_em": self.atualizado_em,
+            "pelo_usuario": self.pelo_usuario,
         }

@@ -2,7 +2,8 @@
 """Repositório de recargas: acesso a dados (PostgreSQL).
 
 Schema:
-  recargas       (id, sequencia, data, descricao)
+  recargas       (id, sequencia, data, descricao,
+                  atualizado_em, pelo_usuario)
   recargas_itens (id, recarga_id, nome, documento, valor,
                   beneficio, carga, sem_carga)
 
@@ -13,6 +14,11 @@ app.database.schema (concorrente-safe).
 Cabeçalho e itens são gravados na mesma transação; na edição
 os itens existentes são substituídos pelos atuais da tela.
 
+Last-write-wins: o INSERT carimba atualizado_em/pelo_usuario; o
+UPDATE só aplica se a versão enviada ainda for a atual no banco —
+não casou e a recarga existe -> ConflitoEdicaoError; não existe
+mais -> False (excluída por outro usuário).
+
 Conexão por operação: cada método abre, usa e fecha a conexão —
 queda de rede ou restart do PostgreSQL não deixa o app preso a
 uma conexão morta; a próxima operação reconecta sozinha.
@@ -21,10 +27,11 @@ from contextlib import contextmanager
 
 from app.database import get_connection
 from app.models.recarga import Recarga, RecargaItem
+from app.utils import sessao
+from app.utils.erros import ConflitoEdicaoError
 from app.utils.logger import get_logger
 
 logger = get_logger("recarga_repository")
-
 _PROXIMA_SEQUENCIA = "nextval('seq_recargas_sequencia')"
 
 
@@ -47,44 +54,75 @@ class RecargaRepository:
     # ---------------- escrita ----------------
 
     def salvar(self, recarga: Recarga) -> Recarga:
-        """Insere a recarga e seus itens (sequência automática)."""
+        """Insere a recarga e seus itens (sequência automática).
+
+        Last-write-wins: o INSERT carimba atualizado_em (agora) e
+        pelo_usuario (sessão) e devolve a versão gravada.
+        """
         with self._conexao() as conn:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "INSERT INTO recargas (sequencia, data, descricao) "
-                        f"VALUES ({_PROXIMA_SEQUENCIA}, %s, %s) "
-                        "RETURNING id, sequencia",
-                        (recarga.data, recarga.descricao),
+                        "INSERT INTO recargas "
+                        "  (sequencia, data, descricao, "
+                        "   atualizado_em, pelo_usuario) "
+                        f"VALUES ({_PROXIMA_SEQUENCIA}, %s, %s, "
+                        "         CURRENT_TIMESTAMP, %s) "
+                        "RETURNING id, sequencia, atualizado_em",
+                        (recarga.data, recarga.descricao,
+                         sessao.usuario_atual()),
                     )
                     linha = cur.fetchone()
                     recarga.id, recarga.sequencia = linha[0], linha[1]
+                    recarga.atualizado_em = linha[2]
                     self._inserir_itens(cur, recarga)
-        logger.info("Recarga inserida: seq %s (%d itens)",
-                    recarga.sequencia, len(recarga.itens))
+                    logger.info("Recarga inserida: seq %s (%d itens)",
+                                recarga.sequencia, len(recarga.itens))
         return recarga
 
     def atualizar(self, recarga: Recarga) -> bool:
-        """Atualiza o cabeçalho e substitui os itens existentes."""
+        """Atualiza o cabeçalho e substitui os itens existentes.
+
+        Last-write-wins: o UPDATE só aplica se a versão enviada
+        (recarga.atualizado_em) ainda for a atual no banco.
+          - Não casou e a recarga existe -> ConflitoEdicaoError.
+          - Não casou e a recarga não existe mais -> False (excluída).
+        Cabeçalho e itens continuam na MESMA transação.
+        """
         with self._conexao() as conn:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "UPDATE recargas SET data = %s, descricao = %s "
-                        "WHERE sequencia = %s RETURNING id",
-                        (recarga.data, recarga.descricao, recarga.sequencia),
+                        "UPDATE recargas "
+                        "SET data = %s, descricao = %s, "
+                        "    atualizado_em = CURRENT_TIMESTAMP, "
+                        "    pelo_usuario = %s "
+                        "WHERE sequencia = %s "
+                        "  AND atualizado_em IS NOT DISTINCT FROM %s "
+                        "RETURNING id, atualizado_em",
+                        (recarga.data, recarga.descricao,
+                         sessao.usuario_atual(), recarga.sequencia,
+                         recarga.atualizado_em),
                     )
                     linha = cur.fetchone()
                     if linha is None:
-                        return False
-                    recarga.id = linha[0]
+                        cur.execute(
+                            "SELECT 1 FROM recargas WHERE sequencia = %s",
+                            (recarga.sequencia,),
+                        )
+                        if cur.fetchone() is None:
+                            return False
+                        raise ConflitoEdicaoError(
+                            f"Recarga {recarga.sequencia} alterada por "
+                            "outro usuário.")
+                    recarga.id, recarga.atualizado_em = linha[0], linha[1]
                     cur.execute(
                         "DELETE FROM recargas_itens WHERE recarga_id = %s",
                         (recarga.id,),
                     )
                     self._inserir_itens(cur, recarga)
-        logger.info("Recarga atualizada: seq %s (%d itens)",
-                    recarga.sequencia, len(recarga.itens))
+                    logger.info("Recarga atualizada: seq %s (%d itens)",
+                                recarga.sequencia, len(recarga.itens))
         return True
 
     def excluir(self, sequencia: int) -> bool:
@@ -119,7 +157,8 @@ class RecargaRepository:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT id, sequencia, data, descricao "
+                        "SELECT id, sequencia, data, descricao, "
+                        "       atualizado_em, pelo_usuario "
                         "FROM recargas WHERE sequencia = %s",
                         (sequencia,),
                     )
@@ -151,7 +190,8 @@ class RecargaRepository:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT id, sequencia, data, descricao
+                        SELECT id, sequencia, data, descricao,
+                               atualizado_em, pelo_usuario
                           FROM recargas
                          WHERE CAST(sequencia AS TEXT) ILIKE %s
                             OR descricao ILIKE %s
@@ -198,6 +238,8 @@ class RecargaRepository:
             sequencia=linha[1],
             data=linha[2],
             descricao=linha[3] or "",
+            atualizado_em=linha[4],
+            pelo_usuario=linha[5] or "",
         )
 
     @staticmethod

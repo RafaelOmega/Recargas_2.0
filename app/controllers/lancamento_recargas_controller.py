@@ -31,6 +31,12 @@ de selecionar na pesquisa); Enter com o campo vazio abre a pesquisa
 completa. Em novo/edição o campo volta a bloquear (a sequência é
 gerada ou é a chave do update).
 
+Last-write-wins: a versão carregada (atualizado_em) fica guardada em
+_recarga_carregada no _preencher e é enviada no salvar em edição;
+alterada por outro usuário, o service levanta ConflitoEdicaoError —
+a tela avisa e recarrega a versão mais recente em vez de sobrescrever
+calado.
+
 Navegação (Tab) em modo Z: esquerda para a direita e de cima
 para baixo — com a recarga aberta, os demais widgets estão
 desabilitados e são pulados pelo Qt.
@@ -43,7 +49,7 @@ from PySide6.QtGui import (QKeySequence, QShortcut, QStandardItem,
 from PySide6.QtWidgets import QMessageBox, QWidget
 
 from app.models.colaborador import Colaborador
-from app.utils.erros import mensagem_erro
+from app.utils.erros import ConflitoEdicaoError, mensagem_erro
 from app.utils.logger import get_logger
 from app.utils.table_utils import ajustar_larguras, configurar_tabela
 from app.views.ui_lancamento_recargas import Ui_Lancamento_Recargas
@@ -90,6 +96,7 @@ class LancamentoRecargasController(QWidget):
         self._item_em_edicao: int | None = None  # linha da grade em edição
         self._colaboradores = []                 # cadastro p/ localizar snapshot
         self._colaborador_selecionado: Colaborador | None = None
+        self._recarga_carregada = None  # versão p/ last-write-wins
 
         self.ui.txt_Total.setReadOnly(True)
         self.ui.txt_Nome.setReadOnly(True)  # nome vem do código/pesquisa
@@ -418,6 +425,29 @@ class LancamentoRecargasController(QWidget):
                 recarga = self._service.salvar(dados)
                 # exibe a sequência gerada automaticamente
                 self.ui.txt_Recargas.setText(str(recarga.sequencia))
+        except ConflitoEdicaoError:
+            # outro usuário salvou durante a edição: avisa e recarrega
+            # a versão mais recente em vez de sobrescrever calado
+            logger.warning(
+                "Conflito de edição: recarga %s alterada por "
+                "outro usuário", dados.get("sequencia"))
+            QMessageBox.warning(
+                self, "Atenção",
+                "Recarga alterada por outro usuário — a tela foi "
+                "atualizada com a versão mais recente. Revise e salve "
+                "novamente se necessário.")
+            recarga = None
+            try:
+                recarga = self._service.buscar_por_sequencia(
+                    int(dados.get("sequencia")))
+            except Exception:
+                logger.exception("Falha ao recarregar após conflito")
+            if recarga is not None:
+                self._preencher(recarga)
+            else:
+                self._limpar_campos()
+                self.ui.txt_Recargas.setFocus()
+            return
         except Exception as exc:
             logger.exception("Falha ao salvar recarga")
             QMessageBox.critical(
@@ -706,6 +736,7 @@ class LancamentoRecargasController(QWidget):
         self._modelo.removeRows(0, self._modelo.rowCount())
         self._limpar_item()
         self.ui.txt_Total.clear()
+        self._recarga_carregada = None
         self._modo = ESTADO_INICIAL
         self._estado_inicial()
 
@@ -730,6 +761,10 @@ class LancamentoRecargasController(QWidget):
         sequencia = self.ui.txt_Recargas.text().strip()
         if sequencia:
             dados["sequencia"] = int(sequencia)
+            # last-write-wins: envia a versão carregada; o UPDATE só
+            # aplica se ela ainda for a atual no banco
+            dados["atualizado_em"] = getattr(
+                self._recarga_carregada, "atualizado_em", None)
         return dados
 
     def _preencher(self, recarga):
@@ -748,5 +783,7 @@ class LancamentoRecargasController(QWidget):
         ajustar_larguras(self.ui.tb_Itens,
                          coluna_stretch=COLUNA_STRETCH_ITENS)
         self._atualizar_total()
+        # last-write-wins: guarda a versão carregada para o salvar
+        self._recarga_carregada = recarga
         self._modo = ESTADO_VISUALIZACAO
         self._estado_visualizacao()

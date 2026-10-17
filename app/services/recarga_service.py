@@ -9,7 +9,6 @@ logger = get_logger("recarga_service")
 
 
 class RecargaService:
-
     def __init__(self):
         self._repo = RecargaRepository()
 

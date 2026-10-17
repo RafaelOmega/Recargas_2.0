@@ -13,11 +13,10 @@ Navegação por teclado (sem depender do mouse):
     apenas traz para frente);
   - Ctrl+Tab / Ctrl+Shift+Tab alternam a subjanela ativa
     (próxima/anterior);
-  - Ctrl+F4 fecha a subjanela ativa.
-
-O QTextBrowser txt_Atalhos (barra inferior) exibe a lista dos
-atalhos — preenchido em código a partir de _TELAS (fonte única):
-reordenar/adicionar telas atualiza a ajuda sozinho.
+  - Ctrl+F4 fecha a subjanela ativa;
+  - F1 abre a ajuda de atalhos (diálogo modal) — a lista nasce de
+    _TELAS (fonte única): reordenar/adicionar telas atualiza a ajuda
+    sozinho, sem tocar no .ui.
 
 Multiusuário: o saldo é recalculado no banco (nunca em cache) e o
 service é recriado automaticamente se a conexão morrer (queda de
@@ -27,7 +26,9 @@ from datetime import datetime
 
 from PySide6.QtCore import QDate, QTime, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import QLabel, QMainWindow, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (QDialog, QLabel, QMainWindow,
+                               QPushButton, QTextBrowser, QVBoxLayout,
+                               QWidget)
 
 from app.controllers.cad_caminhoes_controller import (
     CadCaminhoesController,
@@ -87,6 +88,11 @@ _ESTILO_SALDO_NEGATIVO = (
     "QLineEdit{background:rgba(255,255,255,0.12);"
     "border:1px solid #C0392B;border-radius:4px;"
     "padding:2px 8px;color:#FF8A80;font-weight:bold;}"
+)
+# estilo da ajuda de atalhos (F1): fundo escuro consistente com o tema
+_ESTILO_AJUDA = (
+    "QTextBrowser{background:#16222F;color:#D5DDE8;"
+    "border:1px solid #2E5A8F;border-radius:4px;padding:10px;}"
 )
 
 
@@ -170,9 +176,9 @@ class MainWindowController(QMainWindow):
         """Atalhos de navegação entre subjanelas (padrão MDI).
 
         Ctrl+Tab / Ctrl+Shift+Tab: próxima/anterior subjanela aberta.
-        Ctrl+F4: fecha a subjanela ativa. Contexto de janela: valem
-        enquanto a janela principal estiver ativa, sem roubar teclas
-        de diálogos modais (login, pesquisas).
+        Ctrl+F4: fecha a subjanela ativa. F1: ajuda de atalhos.
+        Contexto de janela: valem enquanto a janela principal estiver
+        ativa, sem roubar teclas de diálogos modais (login, pesquisas).
         """
         self._at_proxima = QShortcut(QKeySequence("Ctrl+Tab"), self)
         self._at_proxima.activated.connect(
@@ -182,42 +188,61 @@ class MainWindowController(QMainWindow):
             self.ui.mdiArea.activatePreviousSubWindow)
         self._at_fechar = QShortcut(QKeySequence("Ctrl+F4"), self)
         self._at_fechar.activated.connect(self._fechar_ativa)
-        # ajuda de atalhos: preenchida em código a partir de _TELAS
-        self._preencher_atalhos()
+        self._at_ajuda = QShortcut(QKeySequence("F1"), self)
+        self._at_ajuda.activated.connect(self._abrir_ajuda)
 
-    def _preencher_atalhos(self):
-        """Preenche o txt_Atalhos com a lista de atalhos.
+    def _html_atalhos(self) -> str:
+        """HTML da lista de atalhos — nasce de _TELAS (fonte única).
 
-        A lista nasce de _TELAS (fonte única): reordenar/adicionar
-        telas atualiza a ajuda automaticamente. HTML compacto no tema
-        escuro; widget ausente na UI é apenas ignorado.
+        Reordenar/adicionar telas atualiza a ajuda automaticamente.
         """
-        if not hasattr(self.ui, "txt_Atalhos"):
-            logger.warning("txt_Atalhos ausente na UI — ajuda desativada")
-            return
         itens = "".join(
-            f"<tr><td style='padding:1px 10px 1px 0;white-space:nowrap;'>"
+            f"<tr><td style='padding:2px 10px 2px 0;white-space:nowrap;'>"
             f"<b>Ctrl+{indice}</b></td>"
-            f"<td style='padding:1px 0;'>{titulo}</td></tr>"
+            f"<td style='padding:2px 0;'>{titulo}</td></tr>"
             for indice, (_, titulo) in enumerate(_TELAS.values(), start=1))
-        self.ui.txt_Atalhos.setHtml(
+        return (
             "<html><body style='color:#D5DDE8;'>"
+            "<h3 style='color:#FFFFFF;margin:0 0 6px 0;'>Atalhos do "
+            "sistema</h3>"
             "<table cellspacing='0' cellpadding='0'>"
             f"{itens}"
-            "<tr><td style='padding:1px 10px 1px 0;white-space:nowrap;'>"
+            "<tr><td style='padding:2px 10px 2px 0;white-space:nowrap;'>"
             "<b>Ctrl+Tab</b></td>"
-            "<td style='padding:1px 0;'>Próxima tela aberta</td></tr>"
-            "<tr><td style='padding:1px 10px 1px 0;white-space:nowrap;'>"
+            "<td style='padding:2px 0;'>Próxima tela aberta</td></tr>"
+            "<tr><td style='padding:2px 10px 2px 0;white-space:nowrap;'>"
             "<b>Ctrl+Shift+Tab</b></td>"
-            "<td style='padding:1px 0;'>Tela anterior</td></tr>"
-            "<tr><td style='padding:1px 10px 1px 0;white-space:nowrap;'>"
+            "<td style='padding:2px 0;'>Tela anterior</td></tr>"
+            "<tr><td style='padding:2px 10px 2px 0;white-space:nowrap;'>"
             "<b>Ctrl+F4</b></td>"
-            "<td style='padding:1px 0;'>Fecha a tela ativa</td></tr>"
-            "<tr><td style='padding:1px 10px 1px 0;white-space:nowrap;'>"
+            "<td style='padding:2px 0;'>Fecha a tela ativa</td></tr>"
+            "<tr><td style='padding:2px 10px 2px 0;white-space:nowrap;'>"
             "<b>F2</b></td>"
-            "<td style='padding:1px 0;'>Novo registro (nas telas de "
+            "<td style='padding:2px 0;'>Novo registro (nas telas de "
             "cadastro e no lançamento)</td></tr>"
+            "<tr><td style='padding:2px 10px 2px 0;white-space:nowrap;'>"
+            "<b>F1</b></td>"
+            "<td style='padding:2px 0;'>Esta ajuda</td></tr>"
             "</table></body></html>")
+
+    def _abrir_ajuda(self):
+        """F1: diálogo modal com a lista de atalhos (tema escuro).
+
+        Construído em código — não depende do .ui. Esc ou o botão
+        fecham.
+        """
+        dialogo = QDialog(self)
+        dialogo.setWindowTitle("Atalhos do sistema")
+        layout = QVBoxLayout(dialogo)
+        navegador = QTextBrowser(dialogo)
+        navegador.setStyleSheet(_ESTILO_AJUDA)
+        navegador.setHtml(self._html_atalhos())
+        navegador.setOpenExternalLinks(False)
+        layout.addWidget(navegador)
+        botao = QPushButton("Fechar (Esc)", dialogo)
+        botao.clicked.connect(dialogo.accept)
+        layout.addWidget(botao)
+        dialogo.exec()
 
     def _fechar_ativa(self):
         """Fecha a subjanela ativa (Ctrl+F4); sem ativa, não faz nada."""
