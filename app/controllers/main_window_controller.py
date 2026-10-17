@@ -15,6 +15,10 @@ Navegação por teclado (sem depender do mouse):
     (próxima/anterior);
   - Ctrl+F4 fecha a subjanela ativa.
 
+O QTextBrowser txt_Atalhos (barra inferior) exibe a lista dos
+atalhos — preenchido em código a partir de _TELAS (fonte única):
+reordenar/adicionar telas atualiza a ajuda sozinho.
+
 Multiusuário: o saldo é recalculado no banco (nunca em cache) e o
 service é recriado automaticamente se a conexão morrer (queda de
 rede ou restart do PostgreSQL) — na próxima atualização ele volta.
@@ -178,6 +182,42 @@ class MainWindowController(QMainWindow):
             self.ui.mdiArea.activatePreviousSubWindow)
         self._at_fechar = QShortcut(QKeySequence("Ctrl+F4"), self)
         self._at_fechar.activated.connect(self._fechar_ativa)
+        # ajuda de atalhos: preenchida em código a partir de _TELAS
+        self._preencher_atalhos()
+
+    def _preencher_atalhos(self):
+        """Preenche o txt_Atalhos com a lista de atalhos.
+
+        A lista nasce de _TELAS (fonte única): reordenar/adicionar
+        telas atualiza a ajuda automaticamente. HTML compacto no tema
+        escuro; widget ausente na UI é apenas ignorado.
+        """
+        if not hasattr(self.ui, "txt_Atalhos"):
+            logger.warning("txt_Atalhos ausente na UI — ajuda desativada")
+            return
+        itens = "".join(
+            f"<tr><td style='padding:1px 10px 1px 0;white-space:nowrap;'>"
+            f"<b>Ctrl+{indice}</b></td>"
+            f"<td style='padding:1px 0;'>{titulo}</td></tr>"
+            for indice, (_, titulo) in enumerate(_TELAS.values(), start=1))
+        self.ui.txt_Atalhos.setHtml(
+            "<html><body style='color:#D5DDE8;'>"
+            "<table cellspacing='0' cellpadding='0'>"
+            f"{itens}"
+            "<tr><td style='padding:1px 10px 1px 0;white-space:nowrap;'>"
+            "<b>Ctrl+Tab</b></td>"
+            "<td style='padding:1px 0;'>Próxima tela aberta</td></tr>"
+            "<tr><td style='padding:1px 10px 1px 0;white-space:nowrap;'>"
+            "<b>Ctrl+Shift+Tab</b></td>"
+            "<td style='padding:1px 0;'>Tela anterior</td></tr>"
+            "<tr><td style='padding:1px 10px 1px 0;white-space:nowrap;'>"
+            "<b>Ctrl+F4</b></td>"
+            "<td style='padding:1px 0;'>Fecha a tela ativa</td></tr>"
+            "<tr><td style='padding:1px 10px 1px 0;white-space:nowrap;'>"
+            "<b>F2</b></td>"
+            "<td style='padding:1px 0;'>Novo registro (nas telas de "
+            "cadastro e no lançamento)</td></tr>"
+            "</table></body></html>")
 
     def _fechar_ativa(self):
         """Fecha a subjanela ativa (Ctrl+F4); sem ativa, não faz nada."""
