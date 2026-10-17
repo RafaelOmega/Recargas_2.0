@@ -47,6 +47,9 @@
      </widget>
     </item>
     <item>
+     <widget class="QTextBrowser" name="txt_Atalhos"/>
+    </item>
+    <item>
      <widget class="QFrame" name="frm_StatusBar">
       <property name="styleSheet">
        <string notr="true">QFrame#frm_StatusBar {

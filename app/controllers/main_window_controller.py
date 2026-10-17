@@ -7,6 +7,14 @@ tela ativa na barra de status.
 
 Cada tela é uma chave em _TELAS; a factory do seu controller é
 registrada em _criadores.
+
+Navegação por teclado (sem depender do mouse):
+  - Ctrl+1..Ctrl+7 abre cada tela na ordem do _TELAS (se já aberta,
+    apenas traz para frente);
+  - Ctrl+Tab / Ctrl+Shift+Tab alternam a subjanela ativa
+    (próxima/anterior);
+  - Ctrl+F4 fecha a subjanela ativa.
+
 Multiusuário: o saldo é recalculado no banco (nunca em cache) e o
 service é recriado automaticamente se a conexão morrer (queda de
 rede ou restart do PostgreSQL) — na próxima atualização ele volta.
@@ -14,6 +22,7 @@ rede ou restart do PostgreSQL) — na próxima atualização ele volta.
 from datetime import datetime
 
 from PySide6.QtCore import QDate, QTime, QTimer
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QLabel, QMainWindow, QVBoxLayout, QWidget
 
 from app.controllers.cad_caminhoes_controller import (
@@ -51,6 +60,7 @@ logger = get_logger("main_window")
 # chave -> (nome do QAction na UI, título da janela)
 # Somente actions realmente adicionadas a um menu no Qt Designer.
 # Ao adicionar/renomear actions no Designer, ajuste apenas este dicionário.
+# A ORDEM define os atalhos globais: Ctrl+1 abre a primeira, Ctrl+7 a última.
 _TELAS = {
     "colaboradores": ("actionCad_Colaboradores", "Colaboradores"),
     "caminhoes": ("actionCaminhoes", "Caminhões"),
@@ -100,6 +110,7 @@ class MainWindowController(QMainWindow):
 
         self._configurar_status_bar()
         self._conectar_acoes()
+        self._conectar_navegacao()
         self._iniciar_relogio()
         self._iniciar_atualizacao_saldo()
 
@@ -135,17 +146,44 @@ class MainWindowController(QMainWindow):
 
         Usa getattr: action ausente na UI é apenas ignorada (com aviso
         no log), então atualizar o Qt Designer não quebra o controller.
+        Cada tela ganha o atalho global Ctrl+N conforme a posição no
+        _TELAS (Ctrl+1 = primeira, Ctrl+7 = última).
         """
         self._telas = {}
-        for chave, (nome_acao, titulo) in _TELAS.items():
+        for indice, (chave, (nome_acao, titulo)) in enumerate(
+                _TELAS.items(), start=1):
             acao = getattr(self.ui, nome_acao, None)
             if acao is None:
                 logger.warning("Ação não encontrada na UI: %s", nome_acao)
                 continue
             self._telas[chave] = (acao, titulo)
+            acao.setShortcut(QKeySequence(f"Ctrl+{indice}"))
             acao.triggered.connect(
                 lambda _checked=False, c=chave: self._abrir_tela(c)
             )
+
+    def _conectar_navegacao(self):
+        """Atalhos de navegação entre subjanelas (padrão MDI).
+
+        Ctrl+Tab / Ctrl+Shift+Tab: próxima/anterior subjanela aberta.
+        Ctrl+F4: fecha a subjanela ativa. Contexto de janela: valem
+        enquanto a janela principal estiver ativa, sem roubar teclas
+        de diálogos modais (login, pesquisas).
+        """
+        self._at_proxima = QShortcut(QKeySequence("Ctrl+Tab"), self)
+        self._at_proxima.activated.connect(
+            self.ui.mdiArea.activateNextSubWindow)
+        self._at_anterior = QShortcut(QKeySequence("Ctrl+Shift+Tab"), self)
+        self._at_anterior.activated.connect(
+            self.ui.mdiArea.activatePreviousSubWindow)
+        self._at_fechar = QShortcut(QKeySequence("Ctrl+F4"), self)
+        self._at_fechar.activated.connect(self._fechar_ativa)
+
+    def _fechar_ativa(self):
+        """Fecha a subjanela ativa (Ctrl+F4); sem ativa, não faz nada."""
+        sub = self.ui.mdiArea.activeSubWindow()
+        if sub is not None:
+            sub.close()
 
     def _iniciar_relogio(self):
         if not hasattr(self.ui, "dt_Data_Atual") or not hasattr(

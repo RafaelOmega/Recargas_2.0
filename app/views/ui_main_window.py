@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'main_windowQXPZbq.ui'
+## Form generated from reading UI file 'main_windowGwFVCk.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -19,7 +19,8 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
 from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QDateEdit, QFrame,
     QHBoxLayout, QLabel, QLineEdit, QMainWindow,
     QMdiArea, QMenu, QMenuBar, QSizePolicy,
-    QSpacerItem, QTimeEdit, QVBoxLayout, QWidget)
+    QSpacerItem, QTextBrowser, QTimeEdit, QVBoxLayout,
+    QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -58,6 +59,11 @@ class Ui_MainWindow(object):
 "}")
 
         self.verticalLayout.addWidget(self.mdiArea)
+
+        self.txt_Atalhos = QTextBrowser(self.centralwidget)
+        self.txt_Atalhos.setObjectName(u"txt_Atalhos")
+
+        self.verticalLayout.addWidget(self.txt_Atalhos)
 
         self.frm_StatusBar = QFrame(self.centralwidget)
         self.frm_StatusBar.setObjectName(u"frm_StatusBar")
