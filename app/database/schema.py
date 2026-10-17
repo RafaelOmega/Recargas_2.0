@@ -14,6 +14,11 @@ Números automáticos vêm de SEQUENCEs do PostgreSQL:
 eliminando a race condition do MAX()+1 em uso multiusuário.
 Cada sequência é sincronizada com o maior valor já gravado
 (idempotente).
+
+Last-write-wins: as 4 tabelas de cadastro ganham atualizado_em
+(versão do registro) e pelo_usuario (último escritor) — migração
+idempotente; registros antigos ficam com atualizado_em NULL, que
+casa com a carga None (sem falso conflito na primeira edição).
 """
 from app.database.database import get_connection
 from app.utils.logger import get_logger
@@ -60,6 +65,12 @@ _COMANDOS = (
     """
     ALTER TABLE colaboradores
         ADD COLUMN IF NOT EXISTS ativo BOOLEAN NOT NULL DEFAULT TRUE
+    """,
+    # last-write-wins: versão do registro + último escritor
+    """
+    ALTER TABLE colaboradores
+        ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS pelo_usuario VARCHAR(60) DEFAULT ''
     """,
     # ---------------- recargas (cabeçalho) ----------------
     """
@@ -140,6 +151,12 @@ _COMANDOS = (
         END IF;
     END $$
     """,
+    # last-write-wins: versão do registro + último escritor
+    """
+    ALTER TABLE saldo_conta
+        ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS pelo_usuario VARCHAR(60) DEFAULT ''
+    """,
     # ---------------- usuarios (acesso ao sistema) ----------------
     """
     CREATE TABLE IF NOT EXISTS usuarios (
@@ -179,6 +196,12 @@ _COMANDOS = (
     ALTER TABLE usuarios
         ADD COLUMN IF NOT EXISTS documento VARCHAR(20) DEFAULT ''
     """,
+    # last-write-wins: versão do registro + último escritor
+    """
+    ALTER TABLE usuarios
+        ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS pelo_usuario VARCHAR(60) DEFAULT ''
+    """,
     # ---------------- caminhoes (frota) ----------------
     """
     CREATE TABLE IF NOT EXISTS caminhoes (
@@ -212,6 +235,12 @@ _COMANDOS = (
             PERFORM setval('seq_caminhoes_codigo', v_max, true);
         END IF;
     END $$
+    """,
+    # last-write-wins: versão do registro + último escritor
+    """
+    ALTER TABLE caminhoes
+        ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS pelo_usuario VARCHAR(60) DEFAULT ''
     """,
 )
 

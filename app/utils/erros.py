@@ -7,6 +7,15 @@ informa os textos do seu contexto.
 """
 
 
+class ConflitoEdicaoError(Exception):
+    """Registro alterado por outro usuário entre a carga e o salvar.
+
+    Levantada pelos repositories quando o UPDATE não casa a versão
+    carregada (atualizado_em) mas o registro ainda existe — o
+    last-write-wins detecta a edição concorrente antes de sobrescrever.
+    """
+
+
 def mensagem_erro(exc: Exception, duplicidade: str = "",
                   contexto: str = "", prefixo: str = "") -> str:
     """Mensagem amigável para o usuário a partir da exceção.

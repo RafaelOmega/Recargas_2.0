@@ -2,26 +2,29 @@
 """Repositório de colaboradores: acesso a dados (PostgreSQL).
 
 Schema:
-  colaboradores (id, codigo, nome, documento, ativo)
+  colaboradores (id, codigo, nome, documento, ativo,
+                 atualizado_em, pelo_usuario)
 
 O código é automático: vem da SEQUENCE seq_colaboradores_codigo
 (1, 2, 3, ...), criada e sincronizada pelo app.database.schema.
 Concorrente-safe: dois usuários salvando ao mesmo tempo nunca
-geram o mesmo código.
+recebem o mesmo código (cada INSERT consome um nextval).
 
-Conexão por operação: cada método abre, usa e fecha a conexão —
-queda de rede ou restart do PostgreSQL não deixa o app preso a
-uma conexão morta; a próxima operação reconecta sozinha.
+Last-write-wins: INSERT/UPDATE carimbam atualizado_em/pelo_usuario;
+o UPDATE só aplica quando a versão carregada ainda é a atual —
+alterada por outro usuário levanta ConflitoEdicaoError.
 """
 from contextlib import contextmanager
 
 from app.database import get_connection
 from app.models.colaborador import Colaborador
+from app.utils import sessao
+from app.utils.erros import ConflitoEdicaoError
 from app.utils.logger import get_logger
 
 logger = get_logger("colaborador_repository")
 
-_COLUNAS = "codigo, nome, documento, ativo"
+_COLUNAS = "codigo, nome, documento, ativo, atualizado_em, pelo_usuario"
 
 _PROXIMO_CODIGO = "nextval('seq_colaboradores_codigo')::TEXT"
 
@@ -51,10 +54,11 @@ class ColaboradorRepository:
                 with conn.cursor() as cur:
                     cur.execute(
                         f"INSERT INTO colaboradores ({_COLUNAS}) "
-                        f"VALUES ({_PROXIMO_CODIGO}, %s, %s, %s) "
+                        f"VALUES ({_PROXIMO_CODIGO}, %s, %s, %s, "
+                        "CURRENT_TIMESTAMP, %s) "
                         "RETURNING id, codigo",
                         (colaborador.nome, colaborador.documento,
-                         colaborador.ativo),
+                         colaborador.ativo, sessao.usuario_atual()),
                     )
                     linha = cur.fetchone()
                     colaborador.id, colaborador.codigo = linha[0], linha[1]
@@ -62,17 +66,37 @@ class ColaboradorRepository:
         return colaborador
 
     def atualizar(self, colaborador: Colaborador) -> bool:
+        """Atualiza pelo código apenas se a versão carregada for a atual.
+
+        Levanta ConflitoEdicaoError quando o registro foi alterado por
+        outro usuário; retorna False quando foi excluído.
+        """
         with self._conexao() as conn:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         "UPDATE colaboradores "
-                        "SET nome = %s, documento = %s, ativo = %s "
-                        "WHERE codigo = %s",
+                        "SET nome = %s, documento = %s, ativo = %s, "
+                        "    atualizado_em = CURRENT_TIMESTAMP, "
+                        "    pelo_usuario = %s "
+                        "WHERE codigo = %s "
+                        "  AND atualizado_em IS NOT DISTINCT FROM %s",
                         (colaborador.nome, colaborador.documento,
-                         colaborador.ativo, colaborador.codigo),
+                         colaborador.ativo, sessao.usuario_atual(),
+                         colaborador.codigo, colaborador.atualizado_em),
                     )
                     atualizado = cur.rowcount > 0
+                    if not atualizado:
+                        # distingue 'excluído' de 'alterado por outro'
+                        cur.execute(
+                            "SELECT 1 FROM colaboradores "
+                            "WHERE codigo = %s",
+                            (colaborador.codigo,),
+                        )
+                        if cur.fetchone() is not None:
+                            raise ConflitoEdicaoError(
+                                f"Colaborador {colaborador.codigo} "
+                                "alterado por outro usuário.")
         logger.info("Colaborador atualizado: %s (%s)",
                     colaborador.codigo, atualizado)
         return atualizado
@@ -96,7 +120,8 @@ class ColaboradorRepository:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT id, codigo, nome, documento, ativo "
+                        "SELECT id, codigo, nome, documento, ativo, "
+                        "atualizado_em, pelo_usuario "
                         "FROM colaboradores WHERE codigo = %s",
                         (codigo,),
                     )
@@ -121,7 +146,8 @@ class ColaboradorRepository:
                 with conn.cursor() as cur:
                     cur.execute(
                         f"""
-                        SELECT id, codigo, nome, documento, ativo
+                        SELECT id, codigo, nome, documento, ativo,
+                               atualizado_em, pelo_usuario
                           FROM colaboradores
                          WHERE {" AND ".join(clausulas)}
                          ORDER BY codigo
@@ -144,4 +170,6 @@ class ColaboradorRepository:
             nome=linha[2] or "",
             documento=linha[3] or "",
             ativo=bool(linha[4]),
+            atualizado_em=linha[5],
+            pelo_usuario=linha[6] or "",
         )

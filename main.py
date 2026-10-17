@@ -12,6 +12,7 @@ from app.controllers.login_controller import LoginController
 from app.controllers.main_window_controller import MainWindowController
 from app.database import get_connection
 from app.database.schema import criar_schema
+from app.utils import sessao
 from app.utils.icons import aplicar_icone_aplicacao
 from app.utils.logger import get_logger, setup_logging
 from app.utils.theme import aplicar_tema
@@ -70,7 +71,6 @@ def main() -> int:
     splash = CarregamentoController()
     splash.show()
     splash.atualizar(10, "Abrindo Controle de Recargas")
-
     splash.atualizar(30, "Conectando ao banco de dados...")
     if not _validar_conexao():
         resposta = QMessageBox.question(
@@ -78,7 +78,8 @@ def main() -> int:
             "Banco de dados",
             "Não foi possível conectar ao banco de dados.\n\n"
             "Deseja continuar mesmo assim?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes |
+            QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
         if resposta != QMessageBox.StandardButton.Yes:
@@ -108,13 +109,14 @@ def main() -> int:
         logger.info("Login cancelado — encerrando")
         return 0
     usuario = login.usuario_autenticado
+    # last-write-wins: registra quem está editando (carimbo pelo_usuario)
+    sessao.definir_usuario(usuario.login if usuario else "")
     logger.info("Sessão iniciada: %s", usuario.login if usuario else "?")
 
     splash = CarregamentoController()
     splash.show()
     splash.atualizar(85, "Carregando as janelas do sistema...")
     janela = MainWindowController()
-
     splash.atualizar(100, "Pronto")
     janela.showMaximized()
     splash.close()

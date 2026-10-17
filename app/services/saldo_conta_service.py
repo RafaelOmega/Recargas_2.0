@@ -20,7 +20,8 @@ class SaldoContaService:
     def atualizar(self, dados: dict) -> bool:
         return self._repo.atualizar(SaldoConta(
             codigo=dados["codigo"], data=dados["data"],
-            valor=dados["valor"]))
+            valor=dados["valor"],
+            atualizado_em=dados.get("atualizado_em")))
 
     def excluir(self, codigo: str) -> bool:
         return self._repo.excluir(codigo)

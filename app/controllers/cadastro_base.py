@@ -22,15 +22,20 @@ Estados (iguais em todos os cadastros):
   visualizacao -> registro carregado (somente leitura)
   edicao       -> "Editar" liberou os campos; Salvar atualiza
 
-Multiusuário: atualizar/excluir retornam False quando o registro
-não existe mais (excluído por outro usuário) — a tela avisa e limpa
-em vez de fingir sucesso.
+Multiusuário:
+  - atualizar/excluir retornam False quando o registro não existe
+    mais (excluído por outro usuário) — a tela avisa e limpa em vez
+    de fingir sucesso;
+  - last-write-wins: a base guarda a versão carregada (atualizado_em)
+    e a injeta no salvar em edição; alterada por outro usuário, o
+    service levanta ConflitoEdicaoError — a tela avisa e recarrega a
+    versão mais recente em vez de sobrescrever calado.
 """
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QMessageBox, QWidget
 
-from app.utils.erros import mensagem_erro
+from app.utils.erros import ConflitoEdicaoError, mensagem_erro
 from app.utils.logger import get_logger
 
 logger = get_logger("cadastro_base")
@@ -42,6 +47,9 @@ ESTADO_EDICAO = "edicao"
 
 _MSG_REGISTRO_SUMIU = ("Registro não encontrado — provavelmente foi "
                        "excluído por outro usuário. A tela será limpa.")
+_MSG_CONFLITO_EDICAO = (
+    "Registro alterado por outro usuário — a tela foi atualizada com "
+    "a versão mais recente. Revise e salve novamente se necessário.")
 
 
 class CadastroBase(QWidget):
@@ -49,6 +57,7 @@ class CadastroBase(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._modo = ESTADO_INICIAL
+        self._registro_carregado = None   # versão p/ last-write-wins
 
     # ---------------- fase 2 (chamada pelo filho) ----------------
 
@@ -190,10 +199,13 @@ class CadastroBase(QWidget):
         O código é responsabilidade da BASE: sem ele o salvar em
         edição gravaria um UPDATE com WHERE codigo = '' (nunca casa,
         falso 'não existe mais' — bug corrigido em 16/10/2026).
+        A versão carregada (atualizado_em) fica guardada para o
+        last-write-wins no salvar em edição.
         """
         self._limpar_campos()
         self.ui.txt_Codigo.setText(str(registro.codigo))
         self._preencher_campos(registro)
+        self._registro_carregado = registro
         self._modo = ESTADO_VISUALIZACAO
         self._estado_visualizacao()
 
@@ -203,7 +215,6 @@ class CadastroBase(QWidget):
             return
         if not self._validar_obrigatorios():
             return
-
         dados = self._coletar_dados()
         try:
             if self._modo == ESTADO_NOVO:
@@ -218,6 +229,10 @@ class CadastroBase(QWidget):
                         self, "Atenção",
                         "Nenhum registro carregado para atualizar.")
                     return
+                # last-write-wins: envia a versão carregada; o UPDATE
+                # só aplica se ela ainda for a atual no banco
+                dados["atualizado_em"] = getattr(
+                    self._registro_carregado, "atualizado_em", None)
                 if not self._service.atualizar(dados):
                     # outro usuário excluiu o registro enquanto a
                     # edição estava aberta
@@ -231,6 +246,23 @@ class CadastroBase(QWidget):
                     return
             else:
                 return
+        except ConflitoEdicaoError:
+            logger.warning("Conflito de edição: %s %s alterado por "
+                           "outro usuário",
+                           self._nome_registro(), dados.get("codigo"))
+            QMessageBox.warning(self, "Atenção", _MSG_CONFLITO_EDICAO)
+            registro = None
+            try:
+                registro = self._service.buscar_por_codigo(
+                    str(dados.get("codigo")))
+            except Exception:
+                logger.exception("Falha ao recarregar após conflito")
+            if registro is not None:
+                self._carregar_registro(registro)
+            else:
+                self._limpar_campos()
+                self.ui.txt_Codigo.setFocus()
+            return
         except ValueError as exc:
             QMessageBox.warning(self, "Atenção", str(exc))
             self._foco_erro_validacao()
@@ -305,6 +337,7 @@ class CadastroBase(QWidget):
     def _limpar_campos(self):
         self.ui.txt_Codigo.clear()
         self._limpar_especifico()
+        self._registro_carregado = None
         self._modo = ESTADO_INICIAL
         self._estado_inicial()
 
@@ -315,25 +348,22 @@ class CadastroBase(QWidget):
 
     def _pesquisar(self):
         """Abre a pesquisa da tela e chama _carregar_registro com o
-        registro escolhido."""
+        registro selecionado."""
         raise NotImplementedError
 
-    def _nome_registro(self) -> str:
-        """Nome na mensagem: 'colaborador', 'usuário', 'lançamento'..."""
+    def _nome_registro(self):
         raise NotImplementedError
 
-    def _nome_service(self) -> str:
-        """Nome na mensagem de service: 'colaboradores', 'usuários'..."""
+    def _nome_service(self):
         raise NotImplementedError
 
-    def _msg_duplicidade(self) -> str:
-        """Mensagem de UniqueViolation ('' usa o fallback genérico)."""
+    def _msg_duplicidade(self):
         raise NotImplementedError
 
-    def _validar_obrigatorios(self) -> bool:
+    def _validar_obrigatorios(self):
         raise NotImplementedError
 
-    def _coletar_dados(self) -> dict:
+    def _coletar_dados(self):
         raise NotImplementedError
 
     def _preencher_campos(self, registro):
@@ -346,3 +376,4 @@ class CadastroBase(QWidget):
 
     def _foco_erro_validacao(self):
         """Foco após ValueError no salvar (ex.: senha curta do usuário)."""
+        pass

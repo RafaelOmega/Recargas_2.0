@@ -2,26 +2,29 @@
 """Repositório de caminhões: acesso a dados (PostgreSQL).
 
 Schema:
-  caminhoes (id, codigo, modelo, placa, ativo)
+  caminhoes (id, codigo, modelo, placa, ativo,
+             atualizado_em, pelo_usuario)
 
 O código é automático: vem da SEQUENCE seq_caminhoes_codigo
 (1, 2, 3, ...), criada e sincronizada pelo app.database.schema.
 Concorrente-safe: dois usuários salvando ao mesmo tempo nunca
-geram o mesmo código.
+recebem o mesmo código (cada INSERT consome um nextval).
 
-Conexão por operação: cada método abre, usa e fecha a conexão —
-queda de rede ou restart do PostgreSQL não deixa o app preso a
-uma conexão morta; a próxima operação reconecta sozinha.
+Last-write-wins: INSERT/UPDATE carimbam atualizado_em/pelo_usuario;
+o UPDATE só aplica quando a versão carregada ainda é a atual —
+alterada por outro usuário levanta ConflitoEdicaoError.
 """
 from contextlib import contextmanager
 
 from app.database import get_connection
 from app.models.caminhao import Caminhao
+from app.utils import sessao
+from app.utils.erros import ConflitoEdicaoError
 from app.utils.logger import get_logger
 
 logger = get_logger("caminhao_repository")
 
-_COLUNAS = "codigo, modelo, placa, ativo"
+_COLUNAS = "codigo, modelo, placa, ativo, atualizado_em, pelo_usuario"
 
 _PROXIMO_CODIGO = "nextval('seq_caminhoes_codigo')::TEXT"
 
@@ -50,31 +53,51 @@ class CaminhaoRepository:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        f"""
-                        INSERT INTO caminhoes ({_COLUNAS})
-                        VALUES ({_PROXIMO_CODIGO}, %s, %s, %s)
-                        RETURNING id, codigo
-                        """,
-                        (caminhao.modelo, caminhao.placa, caminhao.ativo),
+                        f"INSERT INTO caminhoes ({_COLUNAS}) "
+                        f"VALUES ({_PROXIMO_CODIGO}, %s, %s, %s, "
+                        "CURRENT_TIMESTAMP, %s) "
+                        "RETURNING id, codigo",
+                        (caminhao.modelo, caminhao.placa, caminhao.ativo,
+                         sessao.usuario_atual()),
                     )
-                    caminhao.id, caminhao.codigo = cur.fetchone()
+                    linha = cur.fetchone()
+                    caminhao.id, caminhao.codigo = linha[0], linha[1]
         logger.info("Caminhão inserido: %s - %s",
                     caminhao.codigo, caminhao.modelo)
         return caminhao
 
     def atualizar(self, caminhao: Caminhao) -> bool:
-        """Atualiza modelo/placa/ativo pelo código; código nunca muda."""
+        """Atualiza modelo/placa/ativo pelo código apenas se a versão
+        carregada for a atual; código nunca muda.
+
+        Levanta ConflitoEdicaoError quando o registro foi alterado por
+        outro usuário; retorna False quando foi excluído.
+        """
         with self._conexao() as conn:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         "UPDATE caminhoes "
-                        "SET modelo = %s, placa = %s, ativo = %s "
-                        "WHERE codigo = %s",
-                        (caminhao.modelo, caminhao.placa,
-                         caminhao.ativo, caminhao.codigo),
+                        "SET modelo = %s, placa = %s, ativo = %s, "
+                        "    atualizado_em = CURRENT_TIMESTAMP, "
+                        "    pelo_usuario = %s "
+                        "WHERE codigo = %s "
+                        "  AND atualizado_em IS NOT DISTINCT FROM %s",
+                        (caminhao.modelo, caminhao.placa, caminhao.ativo,
+                         sessao.usuario_atual(), caminhao.codigo,
+                         caminhao.atualizado_em),
                     )
                     atualizado = cur.rowcount > 0
+                    if not atualizado:
+                        # distingue 'excluído' de 'alterado por outro'
+                        cur.execute(
+                            "SELECT 1 FROM caminhoes WHERE codigo = %s",
+                            (caminhao.codigo,),
+                        )
+                        if cur.fetchone() is not None:
+                            raise ConflitoEdicaoError(
+                                f"Caminhão {caminhao.codigo} "
+                                "alterado por outro usuário.")
         logger.info("Caminhão atualizado: %s (%s)",
                     caminhao.codigo, atualizado)
         return atualizado
@@ -96,11 +119,8 @@ class CaminhaoRepository:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        f"""
-                        SELECT id, {_COLUNAS}
-                          FROM caminhoes
-                         WHERE codigo = %s
-                        """,
+                        f"SELECT id, {_COLUNAS} "
+                        "FROM caminhoes WHERE codigo = %s",
                         (codigo,),
                     )
                     linha = cur.fetchone()
@@ -135,6 +155,9 @@ class CaminhaoRepository:
 
     @staticmethod
     def _mapear(linha) -> Caminhao:
-        (id_, codigo, modelo, placa, ativo) = linha
+        (id_, codigo, modelo, placa, ativo,
+         atualizado_em, pelo_usuario) = linha
         return Caminhao(id=id_, codigo=codigo, modelo=modelo,
-                        placa=placa, ativo=ativo)
+                        placa=placa, ativo=ativo,
+                        atualizado_em=atualizado_em,
+                        pelo_usuario=pelo_usuario or "")

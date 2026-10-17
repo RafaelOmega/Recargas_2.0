@@ -2,7 +2,8 @@
 """Repositório de usuários: acesso a dados (PostgreSQL).
 
 Schema:
-  usuarios (id, codigo, nome, documento, login, senha_hash, ativo)
+  usuarios (id, codigo, nome, documento, login, senha_hash, ativo,
+            atualizado_em, pelo_usuario)
 
 O código é automático: vem da SEQUENCE seq_usuarios_codigo
 (1, 2, 3, ...), criada e sincronizada pelo app.database.schema.
@@ -12,16 +13,23 @@ A senha NUNCA é gravada em texto puro — o service grava o hash
 Conexão por operação: cada método abre, usa e fecha a conexão —
 queda de rede ou restart do PostgreSQL não deixa o app preso a
 uma conexão morta; a próxima operação reconecta sozinha.
+
+Last-write-wins: INSERT/UPDATE carimbam atualizado_em/pelo_usuario;
+o UPDATE só aplica quando a versão carregada ainda é a atual —
+alterada por outro usuário levanta ConflitoEdicaoError.
 """
 from contextlib import contextmanager
 
 from app.database import get_connection
 from app.models.usuario import Usuario
+from app.utils import sessao
+from app.utils.erros import ConflitoEdicaoError
 from app.utils.logger import get_logger
 
 logger = get_logger("usuario_repository")
 
-_COLUNAS = "codigo, nome, documento, login, senha_hash, ativo"
+_COLUNAS = ("codigo, nome, documento, login, senha_hash, ativo, "
+            "atualizado_em, pelo_usuario")
 _PROXIMO_CODIGO = "nextval('seq_usuarios_codigo')::TEXT"
 
 
@@ -50,10 +58,12 @@ class UsuarioRepository:
                 with conn.cursor() as cur:
                     cur.execute(
                         f"INSERT INTO usuarios ({_COLUNAS}) "
-                        f"VALUES ({_PROXIMO_CODIGO}, %s, %s, %s, %s, %s) "
+                        f"VALUES ({_PROXIMO_CODIGO}, %s, %s, %s, %s, %s, "
+                        "CURRENT_TIMESTAMP, %s) "
                         "RETURNING id, codigo",
                         (usuario.nome, usuario.documento, usuario.login,
-                         usuario.senha_hash, usuario.ativo),
+                         usuario.senha_hash, usuario.ativo,
+                         sessao.usuario_atual()),
                     )
                     linha = cur.fetchone()
                     usuario.id, usuario.codigo = linha[0], linha[1]
@@ -61,19 +71,38 @@ class UsuarioRepository:
         return usuario
 
     def atualizar(self, usuario: Usuario) -> bool:
+        """Atualiza pelo código apenas se a versão carregada for a atual.
+
+        Levanta ConflitoEdicaoError quando o registro foi alterado por
+        outro usuário; retorna False quando foi excluído.
+        """
         with self._conexao() as conn:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         "UPDATE usuarios "
                         "SET nome = %s, documento = %s, login = %s, "
-                        "    senha_hash = %s, ativo = %s "
-                        "WHERE codigo = %s",
+                        "    senha_hash = %s, ativo = %s, "
+                        "    atualizado_em = CURRENT_TIMESTAMP, "
+                        "    pelo_usuario = %s "
+                        "WHERE codigo = %s "
+                        "  AND atualizado_em IS NOT DISTINCT FROM %s",
                         (usuario.nome, usuario.documento, usuario.login,
                          usuario.senha_hash, usuario.ativo,
-                         usuario.codigo),
+                         sessao.usuario_atual(), usuario.codigo,
+                         usuario.atualizado_em),
                     )
                     atualizado = cur.rowcount > 0
+                    if not atualizado:
+                        # distingue 'excluído' de 'alterado por outro'
+                        cur.execute(
+                            "SELECT 1 FROM usuarios WHERE codigo = %s",
+                            (usuario.codigo,),
+                        )
+                        if cur.fetchone() is not None:
+                            raise ConflitoEdicaoError(
+                                f"Usuário {usuario.codigo} "
+                                "alterado por outro usuário.")
         logger.info("Usuario atualizado: %s (%s)",
                     usuario.codigo, atualizado)
         return atualizado
@@ -98,7 +127,7 @@ class UsuarioRepository:
                 with conn.cursor() as cur:
                     cur.execute(
                         "SELECT id, codigo, nome, documento, login, "
-                        "senha_hash, ativo "
+                        "senha_hash, ativo, atualizado_em, pelo_usuario "
                         "FROM usuarios WHERE codigo = %s",
                         (codigo,),
                     )
@@ -112,7 +141,7 @@ class UsuarioRepository:
                 with conn.cursor() as cur:
                     cur.execute(
                         "SELECT id, codigo, nome, documento, login, "
-                        "senha_hash, ativo "
+                        "senha_hash, ativo, atualizado_em, pelo_usuario "
                         "FROM usuarios WHERE login = %s",
                         ((login or "").strip().lower(),),
                     )
@@ -139,7 +168,8 @@ class UsuarioRepository:
                     cur.execute(
                         f"""
                         SELECT id, codigo, nome, documento, login,
-                               senha_hash, ativo
+                               senha_hash, ativo, atualizado_em,
+                               pelo_usuario
                           FROM usuarios
                          WHERE {" AND ".join(clausulas)}
                          ORDER BY codigo
@@ -164,4 +194,6 @@ class UsuarioRepository:
             login=linha[4] or "",
             senha_hash=linha[5] or "",
             ativo=bool(linha[6]),
+            atualizado_em=linha[7],
+            pelo_usuario=linha[8] or "",
         )

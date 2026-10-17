@@ -2,20 +2,22 @@
 """Repositório de saldo da conta Biz: acesso a dados (PostgreSQL).
 
 Schema:
-  saldo_conta (id, codigo, data, valor)
+  saldo_conta (id, codigo, data, valor, atualizado_em, pelo_usuario)
 
 O código visível é automático: vem da SEQUENCE
 seq_saldo_conta_codigo, criada e sincronizada pelo
 app.database.schema (concorrente-safe).
 
-Conexão por operação: cada método abre, usa e fecha a conexão —
-queda de rede ou restart do PostgreSQL não deixa o app preso a
-uma conexão morta; a próxima operação reconecta sozinha.
+Last-write-wins: INSERT/UPDATE carimbam atualizado_em/pelo_usuario;
+o UPDATE só aplica quando a versão carregada ainda é a atual —
+alterada por outro usuário levanta ConflitoEdicaoError.
 """
 from contextlib import contextmanager
 
 from app.database import get_connection
 from app.models.saldo_conta import SaldoConta
+from app.utils import sessao
+from app.utils.erros import ConflitoEdicaoError
 from app.utils.logger import get_logger
 
 logger = get_logger("saldo_conta_repository")
@@ -47,10 +49,12 @@ class SaldoContaRepository:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "INSERT INTO saldo_conta (codigo, data, valor) "
-                        f"VALUES ({_PROXIMO_CODIGO}, %s, %s) "
+                        "INSERT INTO saldo_conta "
+                        "(codigo, data, valor, atualizado_em, pelo_usuario) "
+                        f"VALUES ({_PROXIMO_CODIGO}, %s, %s, "
+                        "CURRENT_TIMESTAMP, %s) "
                         "RETURNING id, codigo",
-                        (saldo.data, saldo.valor),
+                        (saldo.data, saldo.valor, sessao.usuario_atual()),
                     )
                     linha = cur.fetchone()
                     saldo.id, saldo.codigo = linha[0], str(linha[1])
@@ -58,16 +62,36 @@ class SaldoContaRepository:
         return saldo
 
     def atualizar(self, saldo: SaldoConta) -> bool:
-        """Atualiza data e valor pelo código."""
+        """Atualiza data e valor pelo código apenas se a versão
+        carregada for a atual.
+
+        Levanta ConflitoEdicaoError quando o registro foi alterado por
+        outro usuário; retorna False quando foi excluído.
+        """
         with self._conexao() as conn:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "UPDATE saldo_conta SET data = %s, valor = %s "
-                        "WHERE codigo = %s",
-                        (saldo.data, saldo.valor, saldo.codigo),
+                        "UPDATE saldo_conta "
+                        "SET data = %s, valor = %s, "
+                        "    atualizado_em = CURRENT_TIMESTAMP, "
+                        "    pelo_usuario = %s "
+                        "WHERE codigo = %s "
+                        "  AND atualizado_em IS NOT DISTINCT FROM %s",
+                        (saldo.data, saldo.valor, sessao.usuario_atual(),
+                         saldo.codigo, saldo.atualizado_em),
                     )
                     atualizado = cur.rowcount > 0
+                    if not atualizado:
+                        # distingue 'excluído' de 'alterado por outro'
+                        cur.execute(
+                            "SELECT 1 FROM saldo_conta WHERE codigo = %s",
+                            (saldo.codigo,),
+                        )
+                        if cur.fetchone() is not None:
+                            raise ConflitoEdicaoError(
+                                f"Lançamento {saldo.codigo} "
+                                "alterado por outro usuário.")
         logger.info("Saldo conta atualizado: código %s (%s)",
                     saldo.codigo, atualizado)
         return atualizado
@@ -114,7 +138,8 @@ class SaldoContaRepository:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT id, codigo, data, valor "
+                        "SELECT id, codigo, data, valor, "
+                        "atualizado_em, pelo_usuario "
                         "FROM saldo_conta WHERE codigo = %s",
                         (codigo,),
                     )
@@ -134,7 +159,8 @@ class SaldoContaRepository:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT id, codigo, data, valor
+                        SELECT id, codigo, data, valor,
+                               atualizado_em, pelo_usuario
                           FROM saldo_conta
                          WHERE (%s = ''
                                 OR codigo ILIKE %s
@@ -158,4 +184,6 @@ class SaldoContaRepository:
             codigo=str(linha[1]),
             data=linha[2],
             valor=float(linha[3] or 0),
+            atualizado_em=linha[4],
+            pelo_usuario=linha[5] or "",
         )

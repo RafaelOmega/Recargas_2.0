@@ -5,13 +5,14 @@
 Estratégia: um filho mínimo (_CadastroFake) construído em código com os
 widgets do contrato (txt_Codigo, botões do frm_Crud, campos) e um
 service falso em memória. Cobre a máquina de estados, a busca por
-código, salvar/excluir e a proteção multiusuário — incluindo a
-regressão do bug do código vazio corrigido em 16/10/2026.
+código, salvar/excluir, a proteção multiusuário e o last-write-wins —
+incluindo a regressão do bug do código vazio corrigido em 16/10/2026.
 
 Atalhos e teclas são disparados pelos SINAIS (activated.emit,
 returnPressed.emit) — determinístico, sem depender de janela ativa.
 """
 from dataclasses import dataclass
+from datetime import datetime
 
 import pytest
 from PySide6.QtWidgets import (QCheckBox, QLineEdit, QMessageBox,
@@ -21,6 +22,8 @@ from app.controllers.cadastro_base import (ESTADO_EDICAO, ESTADO_INICIAL,
                                            ESTADO_NOVO,
                                            ESTADO_VISUALIZACAO,
                                            CadastroBase)
+from app.utils import sessao
+from app.utils.erros import ConflitoEdicaoError
 
 
 # ---------------- infraestrutura falsa ----------------
@@ -30,10 +33,16 @@ class RegistroFake:
     codigo: str
     nome: str
     ativo: bool = True
+    atualizado_em: datetime | None = None
+    pelo_usuario: str = ""
 
 
 class ServiceFake:
-    """Substitui o service real — mesma interface, sem banco."""
+    """Substitui o service real — mesma interface, sem banco.
+
+    Reproduz o contrato last-write-wins: atualizar levanta
+    ConflitoEdicaoError quando a versão enviada difere da atual.
+    """
 
     def __init__(self):
         self.registros = {}
@@ -41,6 +50,7 @@ class ServiceFake:
         self.chamadas = []
         self.erro_salvar = None      # exceção simulada no salvar
         self.atualizar_ok = True     # False simula 'registro sumiu'
+        self.agora = datetime(2026, 10, 17, 12, 0, 0)  # relógio fixo
 
     def salvar(self, dados):
         self.chamadas.append(("salvar", dict(dados)))
@@ -49,7 +59,9 @@ class ServiceFake:
         codigo = str(self.proximo_codigo)
         self.proximo_codigo += 1
         registro = RegistroFake(codigo=codigo, nome=dados["nome"],
-                                ativo=dados["ativo"])
+                                ativo=dados["ativo"],
+                                atualizado_em=self.agora,
+                                pelo_usuario=sessao.usuario_atual())
         self.registros[codigo] = registro
         return registro
 
@@ -60,8 +72,13 @@ class ServiceFake:
         registro = self.registros.get(str(dados.get("codigo")))
         if registro is None:
             return False
+        if registro.atualizado_em != dados.get("atualizado_em"):
+            raise ConflitoEdicaoError(
+                f"Registro {registro.codigo} alterado por outro usuário.")
         registro.nome = dados["nome"]
         registro.ativo = dados["ativo"]
+        registro.atualizado_em = self.agora
+        registro.pelo_usuario = sessao.usuario_atual()
         return True
 
     def excluir(self, codigo):
@@ -143,6 +160,14 @@ class CadastroFake(CadastroBase):
 
 
 # ---------------- fixtures ----------------
+
+@pytest.fixture(autouse=True)
+def _sessao_limpa():
+    """Sessão vazia em todos os testes (isolamento do carimbo)."""
+    sessao.limpar()
+    yield
+    sessao.limpar()
+
 
 @pytest.fixture
 def service():
@@ -273,7 +298,8 @@ def test_salvar_edicao_atualiza(tela, service):
     tela.ui.txt_Nome.setText("Editado")
     tela.ui.bt_Salvar.click()
     assert ("atualizar", {"codigo": "3", "nome": "Editado",
-                          "ativo": True}) in service.chamadas
+                          "ativo": True,
+                          "atualizado_em": None}) in service.chamadas
     assert service.registros["3"].nome == "Editado"
 
 
@@ -325,6 +351,64 @@ def test_salvar_em_visualizacao_ignorado(tela, service):
     tela._salvar()                    # guarda: não faz nada
     assert not any(t in ("salvar", "atualizar")
                    for (t, _) in service.chamadas)
+
+
+# ---------------- last-write-wins ----------------
+
+def test_base_injeta_versao_carregada(tela, service):
+    """No salvar em edição, a base envia a versão carregada."""
+    versao = datetime(2026, 10, 17, 11, 0, 0)
+    service.registros["3"] = RegistroFake(codigo="3", nome="Original",
+                                          atualizado_em=versao)
+    tela.ui.txt_Codigo.setText("3")
+    tela._enter_codigo()
+    tela.ui.bt_Editar.click()
+    tela.ui.txt_Nome.setText("Editado")
+    tela.ui.bt_Salvar.click()
+    assert ("atualizar", {"codigo": "3", "nome": "Editado",
+                          "ativo": True,
+                          "atualizado_em": versao}) in service.chamadas
+
+
+def test_conflito_avisa_e_recarrega(tela, service, caixas):
+    """Outro usuário salvou durante a edição: avisa e mostra a versão
+    mais recente em visualização, em vez de sobrescrever calado."""
+    service.registros["3"] = RegistroFake(codigo="3", nome="Original")
+    tela.ui.txt_Codigo.setText("3")
+    tela._enter_codigo()
+    tela.ui.bt_Editar.click()
+    # outro usuário salva enquanto a edição está aberta
+    service.registros["3"].nome = "Editado por outro"
+    service.registros["3"].atualizado_em = datetime(2026, 10, 17, 12, 30)
+    tela.ui.txt_Nome.setText("Minha edição")
+    tela.ui.bt_Salvar.click()
+    assert caixas.alguma("alterado por outro usuário")
+    assert tela._modo == ESTADO_VISUALIZACAO
+    assert tela.ui.txt_Nome.text() == "Editado por outro"
+    assert tela.ui.txt_Codigo.text() == "3"
+
+
+def test_conflito_registro_sumiu_depois(tela, service, caixas):
+    """Conflito detectado e, ao recarregar, o registro já não existe."""
+    service.registros["4"] = RegistroFake(codigo="4", nome="Some")
+    tela.ui.txt_Codigo.setText("4")
+    tela._enter_codigo()
+    tela.ui.bt_Editar.click()
+    service.registros["4"].atualizado_em = datetime(2026, 10, 17, 12, 30)
+    del service.registros["4"]
+    tela.ui.bt_Salvar.click()
+    assert caixas.alguma("alterado por outro usuário")
+    assert tela._modo == ESTADO_INICIAL
+    assert tela.ui.txt_Codigo.text() == ""
+
+
+def test_sessao_carimba_pelo_usuario(tela, service):
+    """INSERT carimba o login da sessão (last-write-wins)."""
+    sessao.definir_usuario("rafael")
+    tela.ui.bt_Novo.click()
+    tela.ui.txt_Nome.setText("Com sessão")
+    tela.ui.bt_Salvar.click()
+    assert service.registros["1"].pelo_usuario == "rafael"
 
 
 # ---------------- excluir ----------------
