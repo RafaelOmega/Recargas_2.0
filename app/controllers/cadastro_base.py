@@ -14,7 +14,8 @@ Contrato do filho:
   - implementar: _definir_tab_order(), _pesquisar(), _nome_registro(),
     _nome_service(), _msg_duplicidade(), _validar_obrigatorios(),
     _coletar_dados(), _preencher_campos(registro), _limpar_especifico();
-  - opcional: _foco_erro_validacao() (ex.: senha curta do usuário).
+  - opcional: _foco_erro_validacao() (ex.: senha curta do usuário)
+    e _enter_campo(widget) (Enter num campo sem returnPressed).
 
 Estados (iguais em todos os cadastros):
   inicial      -> busca por código liberada; só "..." e "+" ativos
@@ -34,13 +35,16 @@ Multiusuário:
 Navegação por teclado:
   - Enter no campo de código: com texto busca direto; vazio abre a
     pesquisa;
-  - Enter em um checkbox (ex.: chk_Ativo) avança o foco para o
-    próximo widget da tab order — o checkbox continua sendo
-    marcado/desmarcado com Espaço (padrão de digitação rápida).
+  - Enter em checkbox/spinbox (ex.: chk_Ativo): esses widgets NÃO têm
+    returnPressed (consomem/ignoram o Enter internamente) — um
+    eventFilter intercepta a tecla e chama o hook _enter_campo, que
+    por padrão avança o foco (o checkbox continua sendo marcado com
+    Espaço; o filho pode sobrescrever, ex.: Enter no valor salva).
 """
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QEvent, Qt
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import QCheckBox, QMessageBox, QWidget
+from PySide6.QtWidgets import (QCheckBox, QDoubleSpinBox, QMessageBox,
+                               QWidget)
 
 from app.utils.erros import ConflitoEdicaoError, mensagem_erro
 from app.utils.logger import get_logger
@@ -95,19 +99,31 @@ class CadastroBase(QWidget):
         self.ui.txt_Codigo.returnPressed.connect(self._enter_codigo)
         self._at_f2 = QShortcut(QKeySequence(Qt.Key.Key_F2), self)
         self._at_f2.activated.connect(self._novo)
-        # Enter em checkbox avança o foco (digitação rápida): cada
-        # checkbox do filho ganha o comportamento automaticamente
+        # Enter em checkbox/spinbox: esses widgets não têm returnPressed
+        # (consomem/ignoram o Enter internamente) — o eventFilter
+        # intercepta a tecla e chama o hook _enter_campo
         for widget in self._w_campos:
-            if isinstance(widget, QCheckBox):
-                widget.returnPressed.connect(self._foco_proximo)
+            if isinstance(widget, (QCheckBox, QDoubleSpinBox)):
+                widget.installEventFilter(self)
 
-    def _foco_proximo(self):
-        """Move o foco para o próximo widget da tab order."""
-        atual = self.focusWidget()
-        if atual is not None:
-            proximo = atual.nextInFocusChain()
-            if proximo is not None:
-                proximo.setFocus()
+    def eventFilter(self, observado, evento):
+        """Intercepta Enter/Return nos campos sem returnPressed."""
+        if (evento.type() == QEvent.Type.KeyPress
+                and observado in self._w_campos
+                and evento.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter)):
+            self._enter_campo(observado)
+            return True
+        return super().eventFilter(observado, evento)
+
+    def _enter_campo(self, widget):
+        """Enter num campo sem returnPressed — padrão: avança o foco.
+
+        O filho pode sobrescrever (ex.: Saldo BIZ faz Enter no valor
+        disparar o salvar).
+        """
+        proximo = widget.nextInFocusChain()
+        if proximo is not None:
+            proximo.setFocus()
 
     # ---------------- estados da tela ----------------
 

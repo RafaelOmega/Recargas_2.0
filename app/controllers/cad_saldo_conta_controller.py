@@ -13,7 +13,10 @@ abre a pesquisa completa. Em novo/edição o campo volta a bloquear
 (o código é gerado ou é a chave do update).
 
 Navegação por teclado: Enter no valor (dbs_Valor) dispara o salvar —
-é o último campo antes dos botões, evita voltar ao mouse.
+é o último campo antes dos botões, evita voltar ao mouse. O
+QDoubleSpinBox não tem returnPressed (consome o Enter internamente):
+a base intercepta a tecla via eventFilter e chama _enter_campo,
+sobrescrito aqui.
 """
 from datetime import date
 
@@ -56,10 +59,13 @@ class CadSaldoContaController(CadastroBase):
 
     # ---------------- teclas específicas ----------------
 
-    def _conectar_teclas(self):
-        super()._conectar_teclas()
-        # Enter no valor dispara o salvar (último campo antes dos botões)
-        self.ui.dbs_Valor.returnPressed.connect(self._salvar)
+    def _enter_campo(self, widget):
+        """Enter no valor dispara o salvar; nos demais, comportamento
+        padrão da base (avança o foco)."""
+        if widget is self.ui.dbs_Valor:
+            self._salvar()
+        else:
+            super()._enter_campo(widget)
 
     # ---------------- hooks do CadastroBase ----------------
 
