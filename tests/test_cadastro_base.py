@@ -41,7 +41,8 @@ class ServiceFake:
     """Substitui o service real — mesma interface, sem banco.
 
     Reproduz o contrato last-write-wins: atualizar levanta
-    ConflitoEdicaoError quando a versão enviada difere da atual.
+    ConflitoEdicaoError quando a versão enviada difere da atual;
+    retorna False quando o registro não existe mais (excluído).
     """
 
     def __init__(self):
@@ -50,6 +51,7 @@ class ServiceFake:
         self.chamadas = []
         self.erro_salvar = None      # exceção simulada no salvar
         self.atualizar_ok = True     # False simula 'registro sumiu'
+        self.falhar_busca = False    # True simula falha na recarga
         self.agora = datetime(2026, 10, 17, 12, 0, 0)  # relógio fixo
 
     def salvar(self, dados):
@@ -87,6 +89,8 @@ class ServiceFake:
 
     def buscar_por_codigo(self, codigo):
         self.chamadas.append(("buscar", str(codigo)))
+        if self.falhar_busca:
+            raise RuntimeError("falha de banco")
         return self.registros.get(str(codigo))
 
 
@@ -388,14 +392,16 @@ def test_conflito_avisa_e_recarrega(tela, service, caixas):
     assert tela.ui.txt_Codigo.text() == "3"
 
 
-def test_conflito_registro_sumiu_depois(tela, service, caixas):
-    """Conflito detectado e, ao recarregar, o registro já não existe."""
+def test_conflito_recarrego_falhou_limpa(tela, service, caixas):
+    """Conflito detectado e a recarga da versão mais recente falhou:
+    a tela é limpa (não fica presa numa edição órfã)."""
     service.registros["4"] = RegistroFake(codigo="4", nome="Some")
     tela.ui.txt_Codigo.setText("4")
     tela._enter_codigo()
     tela.ui.bt_Editar.click()
+    # outro usuário salva enquanto a edição está aberta
     service.registros["4"].atualizado_em = datetime(2026, 10, 17, 12, 30)
-    del service.registros["4"]
+    service.falhar_busca = True       # recarga após o conflito falha
     tela.ui.bt_Salvar.click()
     assert caixas.alguma("alterado por outro usuário")
     assert tela._modo == ESTADO_INICIAL
