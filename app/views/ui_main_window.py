@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'main_windowNVOzxg.ui'
+## Form generated from reading UI file 'main_windowQXPZbq.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -33,28 +33,6 @@ class Ui_MainWindow(object):
         MainWindow.setFont(font)
         self.actionCad_Colaboradores = QAction(MainWindow)
         self.actionCad_Colaboradores.setObjectName(u"actionCad_Colaboradores")
-        self.actionMotivo_Entrada = QAction(MainWindow)
-        self.actionMotivo_Entrada.setObjectName(u"actionMotivo_Entrada")
-        self.actionEntrada = QAction(MainWindow)
-        self.actionEntrada.setObjectName(u"actionEntrada")
-        self.actionFicha_Tecnica = QAction(MainWindow)
-        self.actionFicha_Tecnica.setObjectName(u"actionFicha_Tecnica")
-        self.actionSaida = QAction(MainWindow)
-        self.actionSaida.setObjectName(u"actionSaida")
-        self.actionEstoque = QAction(MainWindow)
-        self.actionEstoque.setObjectName(u"actionEstoque")
-        self.actionFichaKardexProduto = QAction(MainWindow)
-        self.actionFichaKardexProduto.setObjectName(u"actionFichaKardexProduto")
-        self.actionRel_Fichas_Tecnicas = QAction(MainWindow)
-        self.actionRel_Fichas_Tecnicas.setObjectName(u"actionRel_Fichas_Tecnicas")
-        self.actionUnidadeMedida = QAction(MainWindow)
-        self.actionUnidadeMedida.setObjectName(u"actionUnidadeMedida")
-        self.actionMaoObra = QAction(MainWindow)
-        self.actionMaoObra.setObjectName(u"actionMaoObra")
-        self.actionBaixaFichaTecnica = QAction(MainWindow)
-        self.actionBaixaFichaTecnica.setObjectName(u"actionBaixaFichaTecnica")
-        self.actionRelEntradas = QAction(MainWindow)
-        self.actionRelEntradas.setObjectName(u"actionRelEntradas")
         self.actionRecargas = QAction(MainWindow)
         self.actionRecargas.setObjectName(u"actionRecargas")
         self.actionSaldo_BIZ = QAction(MainWindow)
@@ -204,17 +182,6 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Controle de Recargas e Abastecimento", None))
         self.actionCad_Colaboradores.setText(QCoreApplication.translate("MainWindow", u"Colaboradores", None))
-        self.actionMotivo_Entrada.setText(QCoreApplication.translate("MainWindow", u"Motivo Entrada", None))
-        self.actionEntrada.setText(QCoreApplication.translate("MainWindow", u"Entrada", None))
-        self.actionFicha_Tecnica.setText(QCoreApplication.translate("MainWindow", u"Ficha T\u00e9cnica", None))
-        self.actionSaida.setText(QCoreApplication.translate("MainWindow", u"Saida", None))
-        self.actionEstoque.setText(QCoreApplication.translate("MainWindow", u"Estoque", None))
-        self.actionFichaKardexProduto.setText(QCoreApplication.translate("MainWindow", u"Ficha Kardex do Produto", None))
-        self.actionRel_Fichas_Tecnicas.setText(QCoreApplication.translate("MainWindow", u"Fichas Tecnicas", None))
-        self.actionUnidadeMedida.setText(QCoreApplication.translate("MainWindow", u"Unidade de Medida", None))
-        self.actionMaoObra.setText(QCoreApplication.translate("MainWindow", u"M\u00e3o de Obra", None))
-        self.actionBaixaFichaTecnica.setText(QCoreApplication.translate("MainWindow", u"Baixa Ficha Tecnica", None))
-        self.actionRelEntradas.setText(QCoreApplication.translate("MainWindow", u"Entradas", None))
         self.actionRecargas.setText(QCoreApplication.translate("MainWindow", u"Recargas", None))
         self.actionSaldo_BIZ.setText(QCoreApplication.translate("MainWindow", u"Saldo BIZ", None))
         self.actionRecarga_Colaborador.setText(QCoreApplication.translate("MainWindow", u"Recarga por Colaborador", None))

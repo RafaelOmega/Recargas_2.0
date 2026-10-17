@@ -308,61 +308,6 @@ QFrame#frm_StatusBar QTimeEdit {
     <string>Colaboradores</string>
    </property>
   </action>
-  <action name="actionMotivo_Entrada">
-   <property name="text">
-    <string>Motivo Entrada</string>
-   </property>
-  </action>
-  <action name="actionEntrada">
-   <property name="text">
-    <string>Entrada</string>
-   </property>
-  </action>
-  <action name="actionFicha_Tecnica">
-   <property name="text">
-    <string>Ficha Técnica</string>
-   </property>
-  </action>
-  <action name="actionSaida">
-   <property name="text">
-    <string>Saida</string>
-   </property>
-  </action>
-  <action name="actionEstoque">
-   <property name="text">
-    <string>Estoque</string>
-   </property>
-  </action>
-  <action name="actionFichaKardexProduto">
-   <property name="text">
-    <string>Ficha Kardex do Produto</string>
-   </property>
-  </action>
-  <action name="actionRel_Fichas_Tecnicas">
-   <property name="text">
-    <string>Fichas Tecnicas</string>
-   </property>
-  </action>
-  <action name="actionUnidadeMedida">
-   <property name="text">
-    <string>Unidade de Medida</string>
-   </property>
-  </action>
-  <action name="actionMaoObra">
-   <property name="text">
-    <string>Mão de Obra</string>
-   </property>
-  </action>
-  <action name="actionBaixaFichaTecnica">
-   <property name="text">
-    <string>Baixa Ficha Tecnica</string>
-   </property>
-  </action>
-  <action name="actionRelEntradas">
-   <property name="text">
-    <string>Entradas</string>
-   </property>
-  </action>
   <action name="actionRecargas">
    <property name="text">
     <string>Recargas</string>
