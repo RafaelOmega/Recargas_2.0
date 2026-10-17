@@ -38,6 +38,7 @@ from app.controllers.relatorio_recarga_colaborador_controller import (
     RelRecargaColaboradorController,
 )
 from app.utils.logger import get_logger
+from app.version import __version__
 from app.views.ui_main_window import Ui_MainWindow
 
 try:
@@ -60,7 +61,6 @@ _TELAS = {
                                 "Recarga por Colaborador"),
     "dash_refeicao": ("actionDash_Refeicao", "Dashboard Refeição"),
 }
-
 # intervalo de atualização automática do saldo da conta (30 s)
 INTERVALO_SALDO_MS = 30_000
 # estilo do campo de saldo (chip sobre a barra azul da barra de status)
@@ -124,6 +124,10 @@ class MainWindowController(QMainWindow):
 
     def _configurar_status_bar(self):
         self.ui.lb_Comandos.setText("")
+        # versão do sistema: fonte única em app/version.py — o texto
+        # fixo do .ui é sobrescrito aqui a cada abertura
+        if hasattr(self.ui, "lb_Versao"):
+            self.ui.lb_Versao.setText(f"Versão {__version__}")
         self.ui.mdiArea.subWindowActivated.connect(self._ao_ativar_subjanela)
 
     def _conectar_acoes(self):
@@ -161,7 +165,6 @@ class MainWindowController(QMainWindow):
             QTime(agora.hour, agora.minute, agora.second))
 
     # ---------------- saldo da conta (barra de status) ----------------
-
     def _iniciar_atualizacao_saldo(self):
         """Saldo na abertura + refresh periódico (cobre multiusuário)."""
         if not hasattr(self.ui, "txt_Saldo_Conta"):
@@ -217,7 +220,6 @@ class MainWindowController(QMainWindow):
 
     def _abrir_tela(self, chave: str):
         titulo = self._telas[chave][1]
-
         sub = self._subjanelas.get(chave)
         if sub is not None:  # já aberta -> traz para frente
             sub.show()

@@ -16,6 +16,7 @@ from app.utils import sessao
 from app.utils.icons import aplicar_icone_aplicacao
 from app.utils.logger import get_logger, setup_logging
 from app.utils.theme import aplicar_tema
+from app.version import __version__
 
 logger = get_logger("main")
 
@@ -54,7 +55,7 @@ def _validar_conexao() -> bool:
 
 def main() -> int:
     setup_logging()
-    logger.info("Iniciando sistema Recargas")
+    logger.info("Iniciando sistema Recargas %s", __version__)
 
     _definir_app_id()
 
