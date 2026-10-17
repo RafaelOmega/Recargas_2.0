@@ -43,6 +43,13 @@ class ServiceFake:
     Reproduz o contrato last-write-wins: atualizar levanta
     ConflitoEdicaoError quando a versão enviada difere da atual;
     retorna False quando o registro não existe mais (excluído).
+
+    buscar_por_codigo devolve uma CÓPIA do registro — igual ao
+    repository real, que constrói um novo model a partir da linha do
+    banco. Sem a cópia, a versão guardada pela base (_registro_carregado)
+    seria o MESMO objeto vivo: simular outro usuário alteraria também a
+    versão carregada e o conflito nunca seria detectado (bug dos testes
+    de conflito, corrigido em 17/10/2026).
     """
 
     def __init__(self):
@@ -91,7 +98,15 @@ class ServiceFake:
         self.chamadas.append(("buscar", str(codigo)))
         if self.falhar_busca:
             raise RuntimeError("falha de banco")
-        return self.registros.get(str(codigo))
+        registro = self.registros.get(str(codigo))
+        if registro is None:
+            return None
+        # cópia: o repository real devolve um NOVO model da linha do
+        # banco — a versão carregada pela base é um snapshot
+        return RegistroFake(codigo=registro.codigo, nome=registro.nome,
+                            ativo=registro.ativo,
+                            atualizado_em=registro.atualizado_em,
+                            pelo_usuario=registro.pelo_usuario)
 
 
 class _UiFake:
