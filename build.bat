@@ -3,7 +3,7 @@ setlocal EnableExtensions EnableDelayedExpansion
 set PYTHONDONTWRITEBYTECODE=1
 
 REM ========= AJUSTE AQUI =========
-set "APP_NAME=Controle de Recargas de Cartoes Beneficio e Abastecimento de Frota"
+set "APP_NAME=Controle de Recargas de Cartoes Beneficio e Abastecimento"
 set "ENTRY_POINT=main.py"
 set "VENV_DIR=.venv"
 set "ICON_FILE=Transport.ico"
