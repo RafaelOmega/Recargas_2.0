@@ -7,13 +7,13 @@ aqui ficam apenas os widgets e os dados do lançamento.
 
 O código é gerado automaticamente no salvar, mas o campo txt_Codigo
 fica HABILITADO no estado inicial como campo de busca: digitar um
-código e Enter carrega o lançamento direto do banco (mesmo resultado
-de selecionar na pesquisa); Enter com o campo vazio abre a pesquisa
-completa. Em novo/edição o campo volta a bloquear (o código é gerado
-ou é a chave do update).
+código e pressionar Enter carrega o lançamento direto do banco
+(mesmo resultado de selecionar na pesquisa); Enter com o campo vazio
+abre a pesquisa completa. Em novo/edição o campo volta a bloquear
+(o código é gerado ou é a chave do update).
 
-Valor em QDoubleSpinBox (dbs_Valor, prefixo "R$ "): o widget já
-garante numérico com 2 decimais — não há texto a validar/converter.
+Navegação por teclado: Enter no valor (dbs_Valor) dispara o salvar —
+é o último campo antes dos botões, evita voltar ao mouse.
 """
 from datetime import date
 
@@ -22,12 +22,15 @@ from PySide6.QtWidgets import QWidget
 
 from app.controllers.cadastro_base import CadastroBase
 from app.models.saldo_conta import SaldoConta
+from app.utils.logger import get_logger
 from app.views.ui_cad_saldo_conta import Ui_Cad_Saldo_Conta
 
 try:
     from app.services.saldo_conta_service import SaldoContaService
 except ImportError:
     SaldoContaService = None
+
+logger = get_logger("cad_saldo_conta")
 
 
 class CadSaldoContaController(CadastroBase):
@@ -43,26 +46,20 @@ class CadSaldoContaController(CadastroBase):
         # campo de valor: moeda com 2 decimais, formato pt-BR
         self.ui.dbs_Valor.setDecimals(2)
         self.ui.dbs_Valor.setRange(-999_999_999.99, 999_999_999.99)
-        self.ui.dbs_Valor.setLocale(
-            QLocale(QLocale.Portuguese, QLocale.Brazil))
+        self.ui.dbs_Valor.setLocale(QLocale(QLocale.Portuguese,
+                                            QLocale.Brazil))
 
         self._w_pesquisar = self.ui.bt_Pesquisar_Saldo_Conta
         self._w_campos = [self.ui.dt_Data, self.ui.dbs_Valor]
         self._w_foco_novo = self.ui.dt_Data
-
         self._inicializar()
 
-    # ---------------- pesquisa ----------------
+    # ---------------- teclas específicas ----------------
 
-    def _pesquisar(self):
-        from app.controllers.pesquisa_saldo_conta_controller import (
-            PesquisaSaldoContaController,
-        )
-        dialogo = PesquisaSaldoContaController(self)
-        if dialogo.exec():
-            saldo = dialogo.saldo_selecionado()
-            if saldo:
-                self._carregar_registro(saldo)
+    def _conectar_teclas(self):
+        super()._conectar_teclas()
+        # Enter no valor dispara o salvar (último campo antes dos botões)
+        self.ui.dbs_Valor.returnPressed.connect(self._salvar)
 
     # ---------------- hooks do CadastroBase ----------------
 
@@ -84,6 +81,17 @@ class CadSaldoContaController(CadastroBase):
         self.setTabOrder(self.ui.bt_Salvar, self.ui.bt_Editar)
         self.setTabOrder(self.ui.bt_Editar, self.ui.bt_Limpar)
         self.setTabOrder(self.ui.bt_Limpar, self.ui.bt_Excluir)
+
+    def _pesquisar(self):
+        """Abre a pesquisa e carrega o lançamento selecionado."""
+        from app.controllers.pesquisa_saldo_conta_controller import (
+            PesquisaSaldoContaController,
+        )
+        dialogo = PesquisaSaldoContaController(self)
+        if dialogo.exec():
+            saldo = dialogo.saldo_selecionado()
+            if saldo:
+                self._carregar_registro(saldo)
 
     def _nome_registro(self) -> str:
         return "lançamento"

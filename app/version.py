@@ -12,4 +12,4 @@ preciso editar o .ui nem regenerar o Python do Designer para trocar
 a versão. O log de inicialização (main.py) também registra a versão.
 """
 
-__version__ = "2.2.1"
+__version__ = "2.2.2"

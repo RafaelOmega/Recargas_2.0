@@ -30,10 +30,17 @@ Multiusuário:
     e a injeta no salvar em edição; alterada por outro usuário, o
     service levanta ConflitoEdicaoError — a tela avisa e recarrega a
     versão mais recente em vez de sobrescrever calado.
+
+Navegação por teclado:
+  - Enter no campo de código: com texto busca direto; vazio abre a
+    pesquisa;
+  - Enter em um checkbox (ex.: chk_Ativo) avança o foco para o
+    próximo widget da tab order — o checkbox continua sendo
+    marcado/desmarcado com Espaço (padrão de digitação rápida).
 """
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import QMessageBox, QWidget
+from PySide6.QtWidgets import QCheckBox, QMessageBox, QWidget
 
 from app.utils.erros import ConflitoEdicaoError, mensagem_erro
 from app.utils.logger import get_logger
@@ -88,6 +95,19 @@ class CadastroBase(QWidget):
         self.ui.txt_Codigo.returnPressed.connect(self._enter_codigo)
         self._at_f2 = QShortcut(QKeySequence(Qt.Key.Key_F2), self)
         self._at_f2.activated.connect(self._novo)
+        # Enter em checkbox avança o foco (digitação rápida): cada
+        # checkbox do filho ganha o comportamento automaticamente
+        for widget in self._w_campos:
+            if isinstance(widget, QCheckBox):
+                widget.returnPressed.connect(self._foco_proximo)
+
+    def _foco_proximo(self):
+        """Move o foco para o próximo widget da tab order."""
+        atual = self.focusWidget()
+        if atual is not None:
+            proximo = atual.nextInFocusChain()
+            if proximo is not None:
+                proximo.setFocus()
 
     # ---------------- estados da tela ----------------
 
