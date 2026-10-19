@@ -6,18 +6,20 @@ CREATE ... IF NOT EXISTS, portanto em banco já existente nada
 é alterado; em banco novo, tudo é criado.
 
 Números automáticos vêm de SEQUENCEs do PostgreSQL:
-  - seq_colaboradores_codigo -> colaboradores.codigo
-  - seq_recargas_sequencia   -> recargas.sequencia
-  - seq_saldo_conta_codigo   -> saldo_conta.codigo
-  - seq_usuarios_codigo      -> usuarios.codigo
-  - seq_caminhoes_codigo     -> caminhoes.codigo
+  - seq_colaboradores_codigo    -> colaboradores.codigo
+  - seq_recargas_sequencia      -> recargas.sequencia
+  - seq_abastecimentos_sequencia -> abastecimentos.sequencia
+  - seq_saldo_conta_codigo      -> saldo_conta.codigo
+  - seq_usuarios_codigo         -> usuarios.codigo
+  - seq_caminhoes_codigo        -> caminhoes.codigo
 eliminando a race condition do MAX()+1 em uso multiusuário.
 Cada sequência é sincronizada com o maior valor já gravado
 (idempotente).
-Last-write-wins: as 4 tabelas de cadastro E as recargas ganham
-atualizado_em (versão do registro) e pelo_usuario (último escritor) —
-migração idempotente; registros antigos ficam com atualizado_em NULL,
-que casa com a carga None (sem falso conflito na primeira edição).
+Last-write-wins: as 4 tabelas de cadastro, as recargas e os
+abastecimentos ganham atualizado_em (versão do registro) e
+pelo_usuario (último escritor) — migração idempotente; registros
+antigos ficam com atualizado_em NULL, que casa com a carga None
+(sem falso conflito na primeira edição).
 """
 from app.database.database import get_connection
 from app.utils.logger import get_logger
@@ -122,6 +124,63 @@ _COMANDOS = (
     # last-write-wins: versão do registro + último escritor (recargas)
     """
     ALTER TABLE recargas
+        ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS pelo_usuario VARCHAR(60) DEFAULT ''
+    """,
+    # ---------------- abastecimentos (cabeçalho) ----------------
+    """
+    CREATE TABLE IF NOT EXISTS abastecimentos (
+        id                 SERIAL PRIMARY KEY,
+        sequencia          INTEGER NOT NULL UNIQUE,
+        data               DATE NOT NULL,
+        caminhao_codigo    VARCHAR(20) NOT NULL DEFAULT '',
+        caminhao_modelo    VARCHAR(120) NOT NULL DEFAULT '',
+        colaborador_codigo VARCHAR(20) NOT NULL DEFAULT '',
+        colaborador_nome   VARCHAR(120) NOT NULL DEFAULT ''
+    )
+    """,
+    """
+    CREATE SEQUENCE IF NOT EXISTS seq_abastecimentos_sequencia
+        START WITH 1
+        INCREMENT BY 1
+        NO MINVALUE
+        NO MAXVALUE
+        NO CYCLE
+    """,
+    """
+    DO $$
+    DECLARE
+        v_max INTEGER;
+    BEGIN
+        SELECT COALESCE(MAX(sequencia), 0)
+          INTO v_max
+          FROM abastecimentos;
+        IF v_max > 0 THEN
+            PERFORM setval('seq_abastecimentos_sequencia', v_max, true);
+        END IF;
+    END $$
+    """,
+    # ---------------- abastecimentos_itens ----------------
+    """
+    CREATE TABLE IF NOT EXISTS abastecimentos_itens (
+        id               SERIAL PRIMARY KEY,
+        abastecimento_id INTEGER NOT NULL
+                         REFERENCES abastecimentos(id)
+                         ON DELETE CASCADE,
+        destino          VARCHAR(120) NOT NULL,
+        km_inicio        INTEGER NOT NULL DEFAULT 0,
+        km_final         INTEGER NOT NULL DEFAULT 0,
+        litros           NUMERIC(12,2) NOT NULL DEFAULT 0
+    )
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_abastecimentos_itens_abastecimento
+        ON abastecimentos_itens (abastecimento_id)
+    """,
+    # last-write-wins: versão do registro + último escritor
+    # (abastecimentos)
+    """
+    ALTER TABLE abastecimentos
         ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP,
         ADD COLUMN IF NOT EXISTS pelo_usuario VARCHAR(60) DEFAULT ''
     """,

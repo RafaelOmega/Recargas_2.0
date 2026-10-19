@@ -9,7 +9,7 @@ Cada tela é uma chave em _TELAS; a factory do seu controller é
 registrada em _criadores.
 
 Navegação por teclado (sem depender do mouse):
-  - Ctrl+1..Ctrl+7 abre cada tela na ordem do _TELAS (se já aberta,
+  - Ctrl+1..Ctrl+8 abre cada tela na ordem do _TELAS (se já aberta,
     apenas traz para frente);
   - Ctrl+Tab / Ctrl+Shift+Tab alternam a subjanela ativa
     (próxima/anterior);
@@ -45,6 +45,9 @@ from app.controllers.cad_usuarios_controller import (
 from app.controllers.dashboard_refeicao_controller import (
     DashRefeicaoController,
 )
+from app.controllers.lancamento_abastecimento_controller import (
+    LancamentoAbastecimentoController,
+)
 from app.controllers.lancamento_recargas_controller import (
     LancamentoRecargasController,
 )
@@ -65,7 +68,7 @@ logger = get_logger("main_window")
 # chave -> (nome do QAction na UI, título da janela)
 # Somente actions realmente adicionadas a um menu no Qt Designer.
 # Ao adicionar/renomear actions no Designer, ajuste apenas este dicionário.
-# A ORDEM define os atalhos globais: Ctrl+1 abre a primeira, Ctrl+7 a última.
+# A ORDEM define os atalhos globais: Ctrl+1 abre a primeira, Ctrl+8 a última.
 _TELAS = {
     "colaboradores": ("actionCad_Colaboradores", "Colaboradores"),
     "caminhoes": ("actionCaminhoes", "Caminhões"),
@@ -75,6 +78,8 @@ _TELAS = {
     "rel_recarga_colaborador": ("actionRecarga_Colaborador",
                                 "Recarga por Colaborador"),
     "dash_refeicao": ("actionDash_Refeicao", "Dashboard Refeição"),
+    "abastecimentos": ("actionAbastecimento",
+                       "Lançamento de Abastecimento"),
 }
 # intervalo de atualização automática do saldo da conta (30 s)
 INTERVALO_SALDO_MS = 30_000
@@ -140,6 +145,8 @@ class MainWindowController(QMainWindow):
             RelRecargaColaboradorController(pai))
         self._criadores["dash_refeicao"] = lambda pai: (
             DashRefeicaoController(pai))
+        self._criadores["abastecimentos"] = lambda pai: (
+            LancamentoAbastecimentoController(pai))
 
     # ---------------- configuração ----------------
 
@@ -157,7 +164,7 @@ class MainWindowController(QMainWindow):
         Usa getattr: action ausente na UI é apenas ignorada (com aviso
         no log), então atualizar o Qt Designer não quebra o controller.
         Cada tela ganha o atalho global Ctrl+N conforme a posição no
-        _TELAS (Ctrl+1 = primeira, Ctrl+7 = última).
+        _TELAS (Ctrl+1 = primeira, Ctrl+8 = última).
         """
         self._telas = {}
         for indice, (chave, (nome_acao, titulo)) in enumerate(
@@ -219,7 +226,7 @@ class MainWindowController(QMainWindow):
             "<tr><td style='padding:2px 10px 2px 0;white-space:nowrap;'>"
             "<b>F2</b></td>"
             "<td style='padding:2px 0;'>Novo registro (nas telas de "
-            "cadastro e no lançamento)</td></tr>"
+            "cadastro e nos lançamentos)</td></tr>"
             "<tr><td style='padding:2px 10px 2px 0;white-space:nowrap;'>"
             "<b>F1</b></td>"
             "<td style='padding:2px 0;'>Esta ajuda</td></tr>"

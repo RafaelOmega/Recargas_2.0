@@ -47,9 +47,6 @@
      </widget>
     </item>
     <item>
-     <widget class="QTextBrowser" name="txt_Atalhos"/>
-    </item>
-    <item>
      <widget class="QFrame" name="frm_StatusBar">
       <property name="styleSheet">
        <string notr="true">QFrame#frm_StatusBar {
@@ -294,6 +291,7 @@ QFrame#frm_StatusBar QTimeEdit {
      <string>Lançamentos</string>
     </property>
     <addaction name="actionRecargas"/>
+    <addaction name="actionAbastecimento"/>
    </widget>
    <widget class="QMenu" name="menuRelatorios">
     <property name="title">
@@ -339,6 +337,11 @@ QFrame#frm_StatusBar QTimeEdit {
   <action name="actionCaminhoes">
    <property name="text">
     <string>Caminhões</string>
+   </property>
+  </action>
+  <action name="actionAbastecimento">
+   <property name="text">
+    <string>Abastecimento</string>
    </property>
   </action>
  </widget>
