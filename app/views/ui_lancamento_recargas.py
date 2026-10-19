@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'lancamento_recargasSdcGHU.ui'
+## Form generated from reading UI file 'lancamento_recargasanhqOR.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -191,11 +191,15 @@ class Ui_Lancamento_Recargas(object):
 
         self.bt_Limpar_Item = QPushButton(self.gb_Itens_Recarga)
         self.bt_Limpar_Item.setObjectName(u"bt_Limpar_Item")
+        self.bt_Limpar_Item.setMinimumSize(QSize(0, 30))
+        self.bt_Limpar_Item.setMaximumSize(QSize(16777215, 30))
 
         self.horizontalLayout_7.addWidget(self.bt_Limpar_Item)
 
         self.bt_Excluir_Item = QPushButton(self.gb_Itens_Recarga)
         self.bt_Excluir_Item.setObjectName(u"bt_Excluir_Item")
+        self.bt_Excluir_Item.setMinimumSize(QSize(0, 30))
+        self.bt_Excluir_Item.setMaximumSize(QSize(16777215, 30))
 
         self.horizontalLayout_7.addWidget(self.bt_Excluir_Item)
 
