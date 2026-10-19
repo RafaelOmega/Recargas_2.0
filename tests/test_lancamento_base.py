@@ -13,6 +13,7 @@ e um item com destino + valor.
 """
 from datetime import date, datetime
 
+import pytest
 from PySide6.QtCore import QDate
 from PySide6.QtGui import QStandardItem
 from PySide6.QtWidgets import (QDateEdit, QDoubleSpinBox, QLineEdit,
@@ -251,6 +252,20 @@ class TelaFake(LancamentoBase):
         return "Já existe um registro com essa sequência."
 
 
+# ---------------- fixtures ----------------
+
+@pytest.fixture
+def service():
+    """Service falso em memória (uma instância por teste)."""
+    return ServiceFake()
+
+
+@pytest.fixture
+def tela(service):
+    """Tela de teste com o contrato mínimo da LancamentoBase."""
+    return TelaFake(service)
+
+
 # ---------------- auxiliares ----------------
 
 def _carregar(tela, service, sequencia=1):
@@ -270,6 +285,14 @@ def _fluxo_edicao(tela):
     tela._liberar_edicao()
     tela._abrir_lancamento()
     tela._sair_lancamento()
+
+
+def _registro_padrao(sequencia=1, **kwargs):
+    """Registro 1 com item padrão (para os testes que carregam)."""
+    dados = {"sequencia": sequencia,
+             "itens": [{"destino": "A", "valor": 5.0}]}
+    dados.update(kwargs)
+    return RegistroFake(**dados)
 
 
 # ---------------- testes: estados ----------------
@@ -319,6 +342,8 @@ def test_liberar_edicao_somente_da_visualizacao(tela, service):
     tela._novo()
     tela._liberar_edicao()
     assert tela._modo == ESTADO_NOVO
+    # semear o serviço para o _carregar encontrar o registro
+    service.registros[1] = _registro_padrao()
     _carregar(tela, service)
     tela._liberar_edicao()
     assert tela._modo == ESTADO_EDICAO
@@ -465,9 +490,7 @@ def test_salvar_novo_grava(tela, service, caixas):
 
 
 def test_salvar_edicao_atualiza(tela, service):
-    service.registros[1] = RegistroFake(
-        sequencia=1, itens=[{"destino": "A", "valor": 5.0}],
-        atualizado_em=datetime(2026, 10, 19, 12, 0, 0))
+    service.registros[1] = _registro_padrao()
     _carregar(tela, service)
     _fluxo_edicao(tela)
     _item_na_grade(tela, "B", 7.0)           # item novo na edição
@@ -480,9 +503,7 @@ def test_salvar_edicao_atualiza(tela, service):
 
 def test_base_injeta_versao_carregada(tela, service):
     versao = datetime(2026, 10, 19, 12, 0, 0)
-    service.registros[1] = RegistroFake(
-        sequencia=1, itens=[{"destino": "A", "valor": 5.0}],
-        atualizado_em=versao)
+    service.registros[1] = _registro_padrao(atualizado_em=versao)
     _carregar(tela, service)
     _fluxo_edicao(tela)
     tela._salvar()
@@ -491,8 +512,7 @@ def test_base_injeta_versao_carregada(tela, service):
 
 
 def test_salvar_edicao_registro_sumiu(tela, service, caixas):
-    service.registros[1] = RegistroFake(
-        sequencia=1, itens=[{"destino": "A", "valor": 5.0}])
+    service.registros[1] = _registro_padrao()
     _carregar(tela, service)
     service.registros.clear()                # outro usuário excluiu
     _fluxo_edicao(tela)
@@ -502,8 +522,7 @@ def test_salvar_edicao_registro_sumiu(tela, service, caixas):
 
 
 def test_conflito_avisa_e_recarrega(tela, service, caixas):
-    service.registros[1] = RegistroFake(
-        sequencia=1, itens=[{"destino": "A", "valor": 5.0}],
+    service.registros[1] = _registro_padrao(
         atualizado_em=datetime(2026, 10, 19, 12, 0, 0))
     _carregar(tela, service)
     # outro usuário salvou durante a edição
@@ -519,8 +538,7 @@ def test_conflito_avisa_e_recarrega(tela, service, caixas):
 
 
 def test_conflito_recarrego_falhou_limpa(tela, service, caixas):
-    service.registros[1] = RegistroFake(
-        sequencia=1, itens=[{"destino": "A", "valor": 5.0}],
+    service.registros[1] = _registro_padrao(
         atualizado_em=datetime(2026, 10, 19, 12, 0, 0))
     _carregar(tela, service)
     service.registros[1].atualizado_em = datetime(2026, 10, 19, 13, 0, 0)
@@ -536,8 +554,7 @@ def test_conflito_recarrego_falhou_limpa(tela, service, caixas):
 # ---------------- testes: excluir ----------------
 
 def test_excluir_com_confirmacao(tela, service, caixas):
-    service.registros[1] = RegistroFake(
-        sequencia=1, itens=[{"destino": "A", "valor": 5.0}])
+    service.registros[1] = _registro_padrao()
     _carregar(tela, service)
     tela._excluir()
     assert service.chamadas == [("excluir", 1)]
@@ -546,8 +563,7 @@ def test_excluir_com_confirmacao(tela, service, caixas):
 
 
 def test_excluir_cancelado_nao_chama_service(tela, service, caixas):
-    service.registros[1] = RegistroFake(
-        sequencia=1, itens=[{"destino": "A", "valor": 5.0}])
+    service.registros[1] = _registro_padrao()
     _carregar(tela, service)
     caixas.resposta_question = QMessageBox.StandardButton.No
     tela._excluir()
@@ -555,8 +571,7 @@ def test_excluir_cancelado_nao_chama_service(tela, service, caixas):
 
 
 def test_excluir_registro_sumiu(tela, service, caixas):
-    service.registros[1] = RegistroFake(
-        sequencia=1, itens=[{"destino": "A", "valor": 5.0}])
+    service.registros[1] = _registro_padrao()
     _carregar(tela, service)
     service.registros.clear()
     tela._excluir()
@@ -565,6 +580,10 @@ def test_excluir_registro_sumiu(tela, service, caixas):
 
 
 def test_excluir_sem_registro_carregado(tela, service, caixas):
+    # _excluir só age a partir de pronta/visualizacao/edicao
+    tela._novo()
+    tela._abrir_lancamento()
+    tela._sair_lancamento()                  # ESTADO_PRONTA, seq. vazia
     tela._excluir()
     assert caixas.alguma("Nenhum")
     assert service.chamadas == []
