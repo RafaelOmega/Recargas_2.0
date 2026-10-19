@@ -2,18 +2,20 @@
 """Repositório de abastecimentos: acesso a dados (PostgreSQL).
 
 Schema:
-  abastecimentos       (id, sequencia, data, caminhao_codigo,
+  abastecimentos       (id, sequencia, data,
+                        atualizado_em, pelo_usuario)
+  abastecimentos_itens (id, abastecimento_id, caminhao_codigo,
                         caminhao_modelo, colaborador_codigo,
-                        colaborador_nome, atualizado_em, pelo_usuario)
-  abastecimentos_itens (id, abastecimento_id, destino, km_inicio,
+                        colaborador_nome, destino, km_inicio,
                         km_final, litros)
 
 A sequência visível é automática: vem da SEQUENCE
 seq_abastecimentos_sequencia, criada e sincronizada pelo
 app.database.schema (concorrente-safe).
 
-Cabeçalho e itens são gravados na mesma transação; na edição
-os itens existentes são substituídos pelos atuais da tela.
+Caminhão e colaborador são snapshot POR ITEM. Cabeçalho e itens são
+gravados na mesma transação; na edição os itens existentes são
+substituídos pelos atuais da tela.
 
 Last-write-wins: o INSERT carimba atualizado_em/pelo_usuario; o
 UPDATE só aplica se a versão enviada ainda for a atual no banco —
@@ -65,19 +67,12 @@ class AbastecimentoRepository:
                 with conn.cursor() as cur:
                     cur.execute(
                         "INSERT INTO abastecimentos "
-                        "  (sequencia, data, caminhao_codigo, "
-                        "   caminhao_modelo, colaborador_codigo, "
-                        "   colaborador_nome, atualizado_em, "
+                        "  (sequencia, data, atualizado_em, "
                         "   pelo_usuario) "
-                        f"VALUES ({_PROXIMA_SEQUENCIA}, %s, %s, %s, %s, "
-                        "         %s, CURRENT_TIMESTAMP, %s) "
+                        f"VALUES ({_PROXIMA_SEQUENCIA}, %s, "
+                        "         CURRENT_TIMESTAMP, %s) "
                         "RETURNING id, sequencia, atualizado_em",
-                        (abastecimento.data,
-                         abastecimento.caminhao_codigo,
-                         abastecimento.caminhao_modelo,
-                         abastecimento.colaborador_codigo,
-                         abastecimento.colaborador_nome,
-                         sessao.usuario_atual()),
+                        (abastecimento.data, sessao.usuario_atual()),
                     )
                     linha = cur.fetchone()
                     abastecimento.id = linha[0]
@@ -104,21 +99,13 @@ class AbastecimentoRepository:
                 with conn.cursor() as cur:
                     cur.execute(
                         "UPDATE abastecimentos "
-                        "SET data = %s, caminhao_codigo = %s, "
-                        "    caminhao_modelo = %s, "
-                        "    colaborador_codigo = %s, "
-                        "    colaborador_nome = %s, "
+                        "SET data = %s, "
                         "    atualizado_em = CURRENT_TIMESTAMP, "
                         "    pelo_usuario = %s "
                         "WHERE sequencia = %s "
                         "  AND atualizado_em IS NOT DISTINCT FROM %s "
                         "RETURNING id, atualizado_em",
-                        (abastecimento.data,
-                         abastecimento.caminhao_codigo,
-                         abastecimento.caminhao_modelo,
-                         abastecimento.colaborador_codigo,
-                         abastecimento.colaborador_nome,
-                         sessao.usuario_atual(),
+                        (abastecimento.data, sessao.usuario_atual(),
                          abastecimento.sequencia,
                          abastecimento.atualizado_em),
                     )
@@ -166,10 +153,14 @@ class AbastecimentoRepository:
         for item in abastecimento.itens:
             cur.execute(
                 "INSERT INTO abastecimentos_itens "
-                "(abastecimento_id, destino, km_inicio, km_final, "
-                " litros) "
-                "VALUES (%s, %s, %s, %s, %s) RETURNING id",
-                (abastecimento.id, item.destino, item.km_inicio,
+                "(abastecimento_id, caminhao_codigo, caminhao_modelo, "
+                " colaborador_codigo, colaborador_nome, destino, "
+                " km_inicio, km_final, litros) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) "
+                "RETURNING id",
+                (abastecimento.id, item.caminhao_codigo,
+                 item.caminhao_modelo, item.colaborador_codigo,
+                 item.colaborador_nome, item.destino, item.km_inicio,
                  item.km_final, item.litros),
             )
             item.id = cur.fetchone()[0]
@@ -182,9 +173,7 @@ class AbastecimentoRepository:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT id, sequencia, data, caminhao_codigo, "
-                        "       caminhao_modelo, colaborador_codigo, "
-                        "       colaborador_nome, atualizado_em, "
+                        "SELECT id, sequencia, data, atualizado_em, "
                         "       pelo_usuario "
                         "FROM abastecimentos WHERE sequencia = %s",
                         (sequencia,),
@@ -195,7 +184,9 @@ class AbastecimentoRepository:
                     abastecimento = self._linha_para_abastecimento(
                         cabecalho)
                     cur.execute(
-                        "SELECT id, abastecimento_id, destino, km_inicio, "
+                        "SELECT id, abastecimento_id, caminhao_codigo, "
+                        "       caminhao_modelo, colaborador_codigo, "
+                        "       colaborador_nome, destino, km_inicio, "
                         "       km_final, litros "
                         "FROM abastecimentos_itens "
                         "WHERE abastecimento_id = %s "
@@ -208,7 +199,7 @@ class AbastecimentoRepository:
         return abastecimento
 
     def pesquisar(self, filtro: str = "") -> list[Abastecimento]:
-        """Pesquisa por sequência/colaborador/caminhão/destino do item.
+        """Pesquisa por sequência/caminhão/colaborador/destino do item.
 
         Cada abastecimento vem com os itens carregados, para a grade
         da pesquisa exibir os destinos em linha.
@@ -219,19 +210,17 @@ class AbastecimentoRepository:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT id, sequencia, data, caminhao_codigo,
-                               caminhao_modelo, colaborador_codigo,
-                               colaborador_nome, atualizado_em,
+                        SELECT id, sequencia, data, atualizado_em,
                                pelo_usuario
                           FROM abastecimentos
                          WHERE CAST(sequencia AS TEXT) ILIKE %s
-                            OR colaborador_nome ILIKE %s
-                            OR caminhao_codigo ILIKE %s
                             OR EXISTS (
                                 SELECT 1 FROM abastecimentos_itens ai
                                  WHERE ai.abastecimento_id =
                                        abastecimentos.id
-                                   AND ai.destino ILIKE %s)
+                                   AND (ai.caminhao_codigo ILIKE %s
+                                        OR ai.colaborador_nome ILIKE %s
+                                        OR ai.destino ILIKE %s))
                          ORDER BY sequencia
                         """,
                         (termo, termo, termo, termo),
@@ -250,7 +239,9 @@ class AbastecimentoRepository:
             return
         ids = [a.id for a in abastecimentos]
         cur.execute(
-            "SELECT id, abastecimento_id, destino, km_inicio, "
+            "SELECT id, abastecimento_id, caminhao_codigo, "
+            "       caminhao_modelo, colaborador_codigo, "
+            "       colaborador_nome, destino, km_inicio, "
             "       km_final, litros "
             "FROM abastecimentos_itens "
             "WHERE abastecimento_id = ANY(%s) "
@@ -274,12 +265,8 @@ class AbastecimentoRepository:
             id=linha[0],
             sequencia=linha[1],
             data=linha[2],
-            caminhao_codigo=linha[3] or "",
-            caminhao_modelo=linha[4] or "",
-            colaborador_codigo=linha[5] or "",
-            colaborador_nome=linha[6] or "",
-            atualizado_em=linha[7],
-            pelo_usuario=linha[8] or "",
+            atualizado_em=linha[3],
+            pelo_usuario=linha[4] or "",
         )
 
     @staticmethod
@@ -287,8 +274,12 @@ class AbastecimentoRepository:
         return AbastecimentoItem(
             id=linha[0],
             abastecimento_id=linha[1],
-            destino=linha[2] or "",
-            km_inicio=int(linha[3] or 0),
-            km_final=int(linha[4] or 0),
-            litros=float(linha[5] or 0),
+            caminhao_codigo=linha[2] or "",
+            caminhao_modelo=linha[3] or "",
+            colaborador_codigo=linha[4] or "",
+            colaborador_nome=linha[5] or "",
+            destino=linha[6] or "",
+            km_inicio=int(linha[7] or 0),
+            km_final=int(linha[8] or 0),
+            litros=float(linha[9] or 0),
         )

@@ -6,15 +6,16 @@ Operações de dados são delegadas ao AbastecimentoService (cabeçalho +
 itens na mesma transação), ao CaminhaoService e ao ColaboradorService
 (seleção de vínculos).
 
-Vínculos (cabeçalho): caminhão e colaborador são selecionados ANTES de
-abrir o lançamento — digite o código e pressione Enter (campo vazio +
-Enter abre a pesquisa) ou clique em "...". A descrição (modelo/nome) é
-preenchida automaticamente e fica somente leitura; digitar no código
-invalida a seleção. Com o lançamento aberto, os vínculos travam.
+Vínculos POR ITEM: caminhão e colaborador pertencem a cada item da
+grade (não ao cabeçalho, que fica só com sequência e data). Com o
+lançamento aberto, digite o código e pressione Enter (campo vazio +
+Enter abre a pesquisa) ou clique em "..." — a descrição (modelo/nome)
+é preenchida automaticamente e fica somente leitura; digitar no
+código invalida a seleção.
 
 Fluxo mestre-detalhe:
-  - "+" prepara um novo abastecimento: escolhe data + vínculos e
-    clica em "Abrir Abastecimento" para liberar a inclusão de itens;
+  - "+" prepara um novo abastecimento: escolhe a data e clica em
+    "Abrir Abastecimento" para liberar a inclusão de itens;
   - "..." abre a pesquisa e carrega o abastecimento selecionado;
   - "Abrir Abastecimento" habilita o fluxo próprio dos itens (em
     registro novo E na edição): cada item é confirmado em memória
@@ -35,7 +36,7 @@ campo vazio abre a pesquisa completa. Em novo/edição o campo volta a
 bloquear (a sequência é gerada ou é a chave do update).
 
 Last-write-wins: a versão carregada (atualizado_em) fica guardada em
-_abastecimento_carregada no _preencher e é enviada no salvar em
+_abastecimento_carregado no _preencher e é enviada no salvar em
 edição; alterado por outro usuário, o service levanta
 ConflitoEdicaoError — a tela avisa e recarrega a versão mais recente
 em vez de sobrescrever calado.
@@ -84,7 +85,9 @@ ESTADO_PRONTA = "pronta"   # itens finalizados; salvar liberado
 ESTADO_VISUALIZACAO = "visualizacao"
 ESTADO_EDICAO = "edicao"   # carregado e liberado para edição
 
-COLUNAS_ITENS = ["Destino", "KM Início", "KM Final", "Litros"]
+# grade: código do colaborador fica no Qt.UserRole da célula 2
+COLUNAS_ITENS = ["Caminhão", "Modelo", "Colaborador", "Destino",
+                 "KM Início", "KM Final", "Litros"]
 COLUNA_STRETCH_ITENS = 0
 
 
@@ -107,6 +110,8 @@ class LancamentoAbastecimentoController(QWidget):
 
         self._modo = ESTADO_INICIAL
         self._item_em_edicao: int | None = None  # linha da grade em edição
+        self._caminhoes = []                     # cadastro p/ reedição
+        self._colaboradores = []                 # cadastro p/ reedição
         self._caminhao_selecionado: Caminhao | None = None
         self._colaborador_selecionado: Colaborador | None = None
         self._abastecimento_carregado = None  # versão p/ last-write-wins
@@ -121,6 +126,8 @@ class LancamentoAbastecimentoController(QWidget):
         self._conectar_botoes()
         self._conectar_teclas()
         self._definir_tab_order()
+        self._carregar_caminhoes()
+        self._carregar_colaboradores()
         self._limpar_campos()
         self.ui.txt_Abastecimento.setFocus()
 
@@ -167,7 +174,7 @@ class LancamentoAbastecimentoController(QWidget):
         self._at_enter_grade = QShortcut(
             QKeySequence(Qt.Key.Key_Return), self.ui.tb_Itens)
         self._at_enter_grade.activated.connect(self._enter_grade_itens)
-        # vínculos: Enter resolve; digitar invalida a seleção
+        # vínculos do item: Enter resolve; digitar invalida a seleção
         self.ui.txt_Cod_Caminhao.returnPressed.connect(
             self._buscar_caminhao_por_codigo)
         self.ui.txt_Cod_Caminhao.textEdited.connect(
@@ -181,7 +188,8 @@ class LancamentoAbastecimentoController(QWidget):
         """Ordem de tabulação em modo Z (esquerda->direita, cima->baixo).
 
         Com o abastecimento aberto, os widgets fora do fluxo de itens
-        estão desabilitados e o Z efetivo fica restrito aos itens.
+        estão desabilitados e o Z efetivo fica restrito aos itens
+        (vínculos incluídos — são do item).
         """
         self.setTabOrder(self.ui.txt_Abastecimento,
                          self.ui.bt_Pesquisar_Abastecimentos)
@@ -218,8 +226,8 @@ class LancamentoAbastecimentoController(QWidget):
     # ---------------- estados da tela ----------------
 
     def _area_vinculos(self, habilitar: bool):
-        """Habilita/desabilita os vínculos do cabeçalho (caminhão e
-        colaborador) — travados enquanto o lançamento está aberto."""
+        """Habilita/desabilita os vínculos DO ITEM (caminhão e
+        colaborador) — ativos junto com o fluxo de itens."""
         self.ui.txt_Cod_Caminhao.setEnabled(habilitar)
         self.ui.bt_Pesquisar_Caminhao.setEnabled(habilitar)
         self.ui.txt_Modelo.setEnabled(habilitar)
@@ -262,7 +270,7 @@ class LancamentoAbastecimentoController(QWidget):
         self.ui.dt_Data.setEnabled(True)
         self.ui.dt_Data.setDate(QDate.currentDate())
         self.ui.bt_Abrir_Abastecimento.setEnabled(True)
-        self._area_vinculos(True)
+        self._area_vinculos(False)  # liberam ao clicar em Abrir
         self._area_itens(False)  # liberada ao clicar em Abrir Abastecimento
 
         self.ui.bt_Salvar.setEnabled(False)  # só após "Sair Abastecimento"
@@ -276,9 +284,9 @@ class LancamentoAbastecimentoController(QWidget):
         self.ui.bt_Pesquisar_Abastecimentos.setEnabled(False)
         self.ui.bt_Novo.setEnabled(False)
 
-        self.ui.dt_Data.setEnabled(False)  # dados travados no lançamento
+        self.ui.dt_Data.setEnabled(False)  # data travada no lançamento
         self.ui.bt_Abrir_Abastecimento.setEnabled(False)
-        self._area_vinculos(False)
+        self._area_vinculos(True)   # vínculos são do item
         self._area_itens(True)
 
         self.ui.bt_Salvar.setEnabled(False)  # só após "Sair Abastecimento"
@@ -319,15 +327,15 @@ class LancamentoAbastecimentoController(QWidget):
         self.ui.bt_Limpar.setEnabled(True)
 
     def _estado_edicao(self):
-        """Carregado e liberado: data e vínculos editáveis; salvar e
-        itens exigem o ciclo Abrir Abastecimento -> Sair Abastecimento."""
+        """Carregado e liberado: data editável; salvar e itens exigem
+        o ciclo Abrir Abastecimento -> Sair Abastecimento."""
         self.ui.txt_Abastecimento.setEnabled(False)  # sequência é a chave
         self.ui.bt_Pesquisar_Abastecimentos.setEnabled(False)
         self.ui.bt_Novo.setEnabled(False)
 
         self.ui.dt_Data.setEnabled(True)
         self.ui.bt_Abrir_Abastecimento.setEnabled(True)
-        self._area_vinculos(True)
+        self._area_vinculos(False)
         self._area_itens(False)
 
         self.ui.bt_Salvar.setEnabled(False)  # só após "Sair Abastecimento"
@@ -363,30 +371,14 @@ class LancamentoAbastecimentoController(QWidget):
         self.ui.dt_Data.setFocus()
 
     def _abrir_abastecimento(self):
-        """Abre o lançamento dos itens em memória.
-
-        Exige caminhão e colaborador selecionados: com o lançamento
-        aberto os vínculos travam, então precisam estar definidos
-        antes de abrir.
-        """
+        """Abre o lançamento dos itens em memória (vínculos são do item
+        e são informados linha a linha)."""
         if self._modo not in (ESTADO_NOVO, ESTADO_EDICAO):
-            return
-        if self._caminhao_selecionado is None:
-            QMessageBox.warning(
-                self, "Atenção",
-                "Selecione o caminhão (código ou pesquisa).")
-            self.ui.txt_Cod_Caminhao.setFocus()
-            return
-        if self._colaborador_selecionado is None:
-            QMessageBox.warning(
-                self, "Atenção",
-                "Selecione o colaborador (código ou pesquisa).")
-            self.ui.txt_Cod_Colaborador.setFocus()
             return
         self._modo = ESTADO_ABERTA
         self._item_em_edicao = None
         self._estado_aberta()
-        self.ui.txt_Destino.setFocus()
+        self.ui.txt_Cod_Caminhao.setFocus()
 
     def _sair_abastecimento(self):
         """Finaliza o lançamento dos itens e libera o botão Salvar."""
@@ -455,31 +447,11 @@ class LancamentoAbastecimentoController(QWidget):
         self._preencher(abastecimento)
 
     def _validar_obrigatorios(self) -> bool:
-        # código digitado sem Enter: tenta resolver antes de validar
-        # (sem avisar aqui: a validação exibe UM único aviso por campo)
-        if (self._caminhao_selecionado is None
-                and self.ui.txt_Cod_Caminhao.text().strip()):
-            self._buscar_caminhao_por_codigo(avisar=False)
-        if (self._colaborador_selecionado is None
-                and self.ui.txt_Cod_Colaborador.text().strip()):
-            self._buscar_colaborador_por_codigo(avisar=False)
-        if self._caminhao_selecionado is None:
-            QMessageBox.warning(
-                self, "Atenção",
-                "Selecione o caminhão (código ou pesquisa).")
-            self.ui.txt_Cod_Caminhao.setFocus()
-            return False
-        if self._colaborador_selecionado is None:
-            QMessageBox.warning(
-                self, "Atenção",
-                "Selecione o colaborador (código ou pesquisa).")
-            self.ui.txt_Cod_Colaborador.setFocus()
-            return False
         if self._modelo.rowCount() == 0:
             QMessageBox.warning(
                 self, "Atenção",
                 "Inclua pelo menos um item no abastecimento.")
-            self.ui.txt_Destino.setFocus()
+            self.ui.txt_Cod_Caminhao.setFocus()
             return False
         return True
 
@@ -601,7 +573,35 @@ class LancamentoAbastecimentoController(QWidget):
         self._limpar_campos()
         self.ui.txt_Abastecimento.setFocus()
 
-    # ---------------- selecao de caminhao ----------------
+    # ---------------- cadastros para reedicao ----------------
+
+    def _carregar_caminhoes(self):
+        """Carrega o cadastro para localizar snapshots na reedição."""
+        self._caminhoes = []
+        if self._caminhao_service is None:
+            return
+        try:
+            self._caminhoes = self._caminhao_service.pesquisar("")
+        except Exception as exc:
+            logger.exception("Falha ao carregar caminhões")
+            QMessageBox.critical(
+                self, "Erro",
+                f"Não foi possível carregar caminhões:\n{exc}")
+
+    def _carregar_colaboradores(self):
+        """Carrega o cadastro para localizar snapshots na reedição."""
+        self._colaboradores = []
+        if self._colaborador_service is None:
+            return
+        try:
+            self._colaboradores = self._colaborador_service.pesquisar("")
+        except Exception as exc:
+            logger.exception("Falha ao carregar colaboradores")
+            QMessageBox.critical(
+                self, "Erro",
+                f"Não foi possível carregar colaboradores:\n{exc}")
+
+    # ---------------- selecao de caminhao (do item) ----------------
 
     def _caminhao_digitado(self):
         """Usuário digitou outro código: invalida a seleção anterior."""
@@ -612,8 +612,8 @@ class LancamentoAbastecimentoController(QWidget):
                                     avisar: bool = True) -> Caminhao | None:
         """Enter no código: com texto resolve; vazio abre a pesquisa.
 
-        avisar=False (chamada interna, ex.: validação do salvar) resolve
-        em silêncio para que a validação exiba UM único aviso.
+        avisar=False (chamada interna, ex.: Confirmar item) resolve em
+        silêncio para que a validação exiba UM único aviso.
         """
         codigo = self.ui.txt_Cod_Caminhao.text().strip()
         if not codigo:
@@ -668,7 +668,23 @@ class LancamentoAbastecimentoController(QWidget):
         self.ui.txt_Modelo.setText(caminhao.modelo or "")
         self.ui.txt_Cod_Colaborador.setFocus()
 
-    # ---------------- selecao de colaborador ----------------
+    def _localizar_caminhao(self, codigo: str,
+                            modelo: str) -> Caminhao | None:
+        """Localiza o caminhão do snapshot no cadastro carregado.
+
+        Snapshots antigos podem divergir do cadastro atual, então a
+        comparação nunca é textual estrita.
+        """
+        if codigo:
+            for caminhao in self._caminhoes:
+                if caminhao.codigo == codigo:
+                    return caminhao
+        if codigo or modelo:
+            # snapshot sem cadastro: entrada temporária para edição
+            return Caminhao(id=None, codigo=codigo, modelo=modelo)
+        return None
+
+    # ---------------- selecao de colaborador (do item) ----------------
 
     def _colaborador_digitado(self):
         """Usuário digitou outro código: invalida a seleção anterior."""
@@ -679,8 +695,8 @@ class LancamentoAbastecimentoController(QWidget):
             self, avisar: bool = True) -> Colaborador | None:
         """Enter no código: com texto resolve; vazio abre a pesquisa.
 
-        avisar=False (chamada interna, ex.: validação do salvar) resolve
-        em silêncio para que a validação exiba UM único aviso.
+        avisar=False (chamada interna, ex.: Confirmar item) resolve em
+        silêncio para que a validação exiba UM único aviso.
         """
         codigo = self.ui.txt_Cod_Colaborador.text().strip()
         if not codigo:
@@ -734,11 +750,65 @@ class LancamentoAbastecimentoController(QWidget):
         self._colaborador_selecionado = colaborador
         self.ui.txt_Cod_Colaborador.setText(colaborador.codigo or "")
         self.ui.txt_Nome.setText(colaborador.nome or "")
-        self.ui.bt_Abrir_Abastecimento.setFocus()
+        self.ui.txt_Destino.setFocus()
+
+    @staticmethod
+    def _so_digitos(texto: str) -> str:
+        return "".join(c for c in (texto or "") if c.isdigit())
+
+    def _localizar_colaborador(self, codigo: str, nome: str,
+                               documento: str) -> Colaborador | None:
+        """Localiza o colaborador do snapshot no cadastro carregado.
+
+        1) código igual; 2) documento igual (apenas dígitos);
+        3) nome igual ignorando maiúsculas/minúsculas e espaços.
+        Snapshots antigos podem divergir do cadastro atual, então a
+        comparação nunca é textual estrita.
+        """
+        if codigo:
+            for col in self._colaboradores:
+                if col.codigo == codigo:
+                    return col
+        doc = self._so_digitos(documento)
+        nome_norm = " ".join(nome.split()).casefold()
+        if doc:
+            for col in self._colaboradores:
+                if self._so_digitos(col.documento) == doc:
+                    return col
+        for col in self._colaboradores:
+            if " ".join(col.nome.split()).casefold() == nome_norm:
+                return col
+        if nome:
+            # snapshot sem cadastro: entrada temporária para edição
+            return Colaborador(id=None, codigo="", nome=nome,
+                               documento=documento)
+        return None
 
     # ---------------- itens da grade ----------------
 
     def _confirmar_item(self):
+        # vínculos do item: resolve código digitado sem Enter em
+        # silêncio (a validação exibe UM único aviso por campo)
+        caminhao = self._caminhao_selecionado
+        if caminhao is None and self.ui.txt_Cod_Caminhao.text().strip():
+            caminhao = self._buscar_caminhao_por_codigo(avisar=False)
+        if caminhao is None:
+            QMessageBox.warning(
+                self, "Atenção",
+                "Selecione o caminhão (código ou pesquisa).")
+            self.ui.txt_Cod_Caminhao.setFocus()
+            return
+        colaborador = self._colaborador_selecionado
+        if (colaborador is None
+                and self.ui.txt_Cod_Colaborador.text().strip()):
+            colaborador = self._buscar_colaborador_por_codigo(avisar=False)
+        if colaborador is None:
+            QMessageBox.warning(
+                self, "Atenção",
+                "Selecione o colaborador (código ou pesquisa).")
+            self.ui.txt_Cod_Colaborador.setFocus()
+            return
+
         destino = self.ui.txt_Destino.text().strip()
         if not destino:
             QMessageBox.warning(
@@ -754,10 +824,18 @@ class LancamentoAbastecimentoController(QWidget):
             self.ui.dbs_Litros.setFocus()
             return
 
+        km_inicio = self.ui.spn_KM_Inicio.value()
+        km_final = self.ui.spn_KM_Final.value()
+        cel_colaborador = QStandardItem(colaborador.nome or "")
+        # valor real no UserRole: código do colaborador para o snapshot
+        cel_colaborador.setData(colaborador.codigo or "", Qt.UserRole)
         itens = [
+            QStandardItem(caminhao.codigo or ""),
+            QStandardItem(caminhao.modelo or ""),
+            cel_colaborador,
             QStandardItem(destino),
-            QStandardItem(str(self.ui.spn_KM_Inicio.value())),
-            QStandardItem(str(self.ui.spn_KM_Final.value())),
+            QStandardItem(str(km_inicio)),
+            QStandardItem(str(km_final)),
             QStandardItem(self._formatar_valor(litros)),
         ]
         if self._item_em_edicao is not None:
@@ -770,7 +848,7 @@ class LancamentoAbastecimentoController(QWidget):
             self._modelo.appendRow(itens)
         self._atualizar_total()
         self._limpar_item()
-        self.ui.txt_Destino.setFocus()
+        self.ui.txt_Cod_Caminhao.setFocus()
 
     def _enter_grade_itens(self):
         """Enter na grade: recarrega o item selecionado para edição."""
@@ -781,15 +859,27 @@ class LancamentoAbastecimentoController(QWidget):
         if self._modo != ESTADO_ABERTA or not indice.isValid():
             return
         linha = indice.row()
-        self.ui.txt_Destino.setText(self._modelo.item(linha, 0).text())
+        caminhao = self._localizar_caminhao(
+            self._modelo.item(linha, 0).text(),
+            self._modelo.item(linha, 1).text())
+        if caminhao is not None:
+            self._aplicar_caminhao(caminhao)
+        cel_colaborador = self._modelo.item(linha, 2)
+        colaborador = self._localizar_colaborador(
+            cel_colaborador.data(Qt.UserRole) or "",
+            cel_colaborador.text(),
+            "")
+        if colaborador is not None:
+            self._aplicar_colaborador(colaborador)
+        self.ui.txt_Destino.setText(self._modelo.item(linha, 3).text())
         self.ui.spn_KM_Inicio.setValue(
-            int(self._modelo.item(linha, 1).text() or 0))
+            int(self._modelo.item(linha, 4).text() or 0))
         self.ui.spn_KM_Final.setValue(
-            int(self._modelo.item(linha, 2).text() or 0))
+            int(self._modelo.item(linha, 5).text() or 0))
         self.ui.dbs_Litros.setValue(
-            self._valor_para_float(self._modelo.item(linha, 3).text()))
+            self._valor_para_float(self._modelo.item(linha, 6).text()))
         self._item_em_edicao = linha
-        self.ui.txt_Destino.setFocus()
+        self.ui.txt_Cod_Caminhao.setFocus()
 
     def _excluir_item(self):
         indice = self.ui.tb_Itens.currentIndex()
@@ -805,9 +895,15 @@ class LancamentoAbastecimentoController(QWidget):
         elif self._item_em_edicao is not None and self._item_em_edicao > linha:
             self._item_em_edicao -= 1
         self._atualizar_total()
-        self.ui.txt_Destino.setFocus()
+        self.ui.txt_Cod_Caminhao.setFocus()
 
     def _limpar_item(self):
+        self._caminhao_selecionado = None
+        self._colaborador_selecionado = None
+        self.ui.txt_Cod_Caminhao.clear()
+        self.ui.txt_Modelo.clear()
+        self.ui.txt_Cod_Colaborador.clear()
+        self.ui.txt_Nome.clear()
         self.ui.txt_Destino.clear()
         self.ui.spn_KM_Inicio.setValue(0)
         self.ui.spn_KM_Final.setValue(0)
@@ -817,7 +913,7 @@ class LancamentoAbastecimentoController(QWidget):
     def _atualizar_total(self):
         total = 0.0
         for linha in range(self._modelo.rowCount()):
-            item = self._modelo.item(linha, 3)
+            item = self._modelo.item(linha, 6)
             if item is None:
                 continue
             total += self._valor_para_float(item.text())
@@ -840,15 +936,9 @@ class LancamentoAbastecimentoController(QWidget):
     def _limpar_campos(self):
         self.ui.txt_Abastecimento.clear()
         self.ui.dt_Data.setDate(QDate.currentDate())
-        self.ui.txt_Cod_Caminhao.clear()
-        self.ui.txt_Modelo.clear()
-        self.ui.txt_Cod_Colaborador.clear()
-        self.ui.txt_Nome.clear()
         self._modelo.removeRows(0, self._modelo.rowCount())
         self._limpar_item()
         self.ui.txt_Total.clear()
-        self._caminhao_selecionado = None
-        self._colaborador_selecionado = None
         self._abastecimento_carregado = None
         self._modo = ESTADO_INICIAL
         self._estado_inicial()
@@ -857,19 +947,21 @@ class LancamentoAbastecimentoController(QWidget):
         qdata = self.ui.dt_Data.date()
         itens = []
         for linha in range(self._modelo.rowCount()):
+            cel_colaborador = self._modelo.item(linha, 2)
             itens.append({
-                "destino": self._modelo.item(linha, 0).text(),
-                "km_inicio": int(self._modelo.item(linha, 1).text() or 0),
-                "km_final": int(self._modelo.item(linha, 2).text() or 0),
+                "caminhao_codigo": self._modelo.item(linha, 0).text(),
+                "caminhao_modelo": self._modelo.item(linha, 1).text(),
+                "colaborador_codigo": str(
+                    cel_colaborador.data(Qt.UserRole) or ""),
+                "colaborador_nome": cel_colaborador.text(),
+                "destino": self._modelo.item(linha, 3).text(),
+                "km_inicio": int(self._modelo.item(linha, 4).text() or 0),
+                "km_final": int(self._modelo.item(linha, 5).text() or 0),
                 "litros": self._valor_para_float(
-                    self._modelo.item(linha, 3).text()),
+                    self._modelo.item(linha, 6).text()),
             })
         dados = {
             "data": date(qdata.year(), qdata.month(), qdata.day()),
-            "caminhao_codigo": self.ui.txt_Cod_Caminhao.text().strip(),
-            "caminhao_modelo": self.ui.txt_Modelo.text().strip(),
-            "colaborador_codigo": self.ui.txt_Cod_Colaborador.text().strip(),
-            "colaborador_nome": self.ui.txt_Nome.text().strip(),
             "itens": itens,
         }
         sequencia = self.ui.txt_Abastecimento.text().strip()
@@ -886,22 +978,15 @@ class LancamentoAbastecimentoController(QWidget):
         self.ui.txt_Abastecimento.setText(str(abastecimento.sequencia))
         data = abastecimento.data
         self.ui.dt_Data.setDate(QDate(data.year, data.month, data.day))
-        self.ui.txt_Cod_Caminhao.setText(
-            abastecimento.caminhao_codigo or "")
-        self.ui.txt_Modelo.setText(abastecimento.caminhao_modelo or "")
-        self.ui.txt_Cod_Colaborador.setText(
-            abastecimento.colaborador_codigo or "")
-        self.ui.txt_Nome.setText(abastecimento.colaborador_nome or "")
-        # snapshots do cabeçalho viram objetos temporários: a validação
-        # passa na reedição sem nova busca (digitar invalida de novo)
-        self._caminhao_selecionado = Caminhao(
-            codigo=abastecimento.caminhao_codigo or "",
-            modelo=abastecimento.caminhao_modelo or "")
-        self._colaborador_selecionado = Colaborador(
-            codigo=abastecimento.colaborador_codigo or "",
-            nome=abastecimento.colaborador_nome or "")
         for item in abastecimento.itens:
+            cel_colaborador = QStandardItem(item.colaborador_nome or "")
+            # valor real no UserRole: código do colaborador do snapshot
+            cel_colaborador.setData(item.colaborador_codigo or "",
+                                    Qt.UserRole)
             self._modelo.appendRow([
+                QStandardItem(item.caminhao_codigo or ""),
+                QStandardItem(item.caminhao_modelo or ""),
+                cel_colaborador,
                 QStandardItem(item.destino or ""),
                 QStandardItem(str(item.km_inicio or 0)),
                 QStandardItem(str(item.km_final or 0)),

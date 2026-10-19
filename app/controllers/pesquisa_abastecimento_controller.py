@@ -3,10 +3,10 @@
 
 Ordenação padrão: coluna Sequência (DESCENDENTE — do maior para o
 menor, ordenação NUMÉRICA). A coluna Data é exibida em formato
-brasileiro (dd/mm/aaaa), Caminhão mostra o código do snapshot,
-Colaborador mostra o nome do snapshot e a coluna Itens mostra os
-DESTINOS em uma única linha (separados por vírgula). Enter na grade
-confirma a seleção (como o duplo clique).
+brasileiro (dd/mm/aaaa). Caminhão e Colaborador são POR ITEM: as
+colunas mostram os códigos/nomes dos itens em uma única linha
+(separados por vírgula) e a coluna Itens mostra os DESTINOS em linha.
+Enter na grade confirma a seleção (como o duplo clique).
 
 Modelo, debounce, conexões, tab order e erros comuns vêm de
 PesquisaBase — aqui ficam apenas as colunas, a consulta e as linhas.
@@ -62,6 +62,8 @@ class PesquisaAbastecimentoController(PesquisaBase):
         self._modelo.removeRows(0, self._modelo.rowCount())
         for abastecimento in registros:
             data = self._para_data(abastecimento.data)
+            caminhoes = self._caminhoes_em_linha(abastecimento)
+            colaboradores = self._colaboradores_em_linha(abastecimento)
             itens = self._itens_em_linha(abastecimento)
             self._modelo.appendRow([
                 # sequência como int no UserRole: ordenação numérica
@@ -71,12 +73,12 @@ class PesquisaAbastecimentoController(PesquisaBase):
                 self._item_ordenavel(
                     data.strftime("%d/%m/%Y"),
                     data.isoformat()),
-                # snapshot do caminhão; ordena pelo próprio texto
-                self._item_ordenavel(abastecimento.caminhao_codigo or "",
-                                     abastecimento.caminhao_codigo or ""),
-                # snapshot do colaborador; ordena pelo próprio texto
-                self._item_ordenavel(abastecimento.colaborador_nome or "",
-                                     abastecimento.colaborador_nome or ""),
+                # vínculos são POR ITEM: códigos dos itens em linha;
+                # ordena pelo próprio texto
+                self._item_ordenavel(caminhoes, caminhoes),
+                # nomes dos colaboradores dos itens em linha;
+                # ordena pelo próprio texto
+                self._item_ordenavel(colaboradores, colaboradores),
                 # destinos em linha; ordena pelo próprio texto
                 self._item_ordenavel(itens, itens),
             ])
@@ -87,12 +89,11 @@ class PesquisaAbastecimentoController(PesquisaBase):
     # ---------------- seleção (API consumida pelo lançamento) ----------------
 
     def abastecimento_selecionado(self) -> Abastecimento | None:
+        """Abastecimento da linha selecionada (recarregado do banco)."""
         indice = self._grade.currentIndex()
         if not indice.isValid():
             return None
         item = self._modelo.item(indice.row(), 0)
-        if item is None or self._service is None:
-            return None
         try:
             return self._service.buscar_por_sequencia(int(item.text()))
         except Exception as exc:
@@ -116,6 +117,26 @@ class PesquisaAbastecimentoController(PesquisaBase):
             return date.fromisoformat(texto)
         except ValueError:
             return datetime.strptime(texto, "%d/%m/%Y").date()
+
+    @staticmethod
+    def _caminhoes_em_linha(abastecimento: Abastecimento) -> str:
+        """Códigos de caminhão dos itens em uma única linha (sem repetir)."""
+        codigos = []
+        for item in (abastecimento.itens or []):
+            codigo = item.caminhao_codigo or ""
+            if codigo and codigo not in codigos:
+                codigos.append(codigo)
+        return ", ".join(codigos)
+
+    @staticmethod
+    def _colaboradores_em_linha(abastecimento: Abastecimento) -> str:
+        """Nomes de colaborador dos itens em uma única linha (sem repetir)."""
+        nomes = []
+        for item in (abastecimento.itens or []):
+            nome = item.colaborador_nome or ""
+            if nome and nome not in nomes:
+                nomes.append(nome)
+        return ", ".join(nomes)
 
     @staticmethod
     def _itens_em_linha(abastecimento: Abastecimento) -> str:
