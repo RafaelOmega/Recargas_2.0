@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>819</width>
+    <width>1180</width>
     <height>545</height>
    </rect>
   </property>
@@ -37,14 +37,11 @@
     <number>5</number>
    </property>
    <item>
-    <widget class="QFrame" name="frm_Cadastro">
-     <property name="frameShape">
-      <enum>QFrame::Shape::StyledPanel</enum>
+    <widget class="QGroupBox" name="gb_Identificacao">
+     <property name="title">
+      <string>Identificação</string>
      </property>
-     <property name="frameShadow">
-      <enum>QFrame::Shadow::Raised</enum>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QHBoxLayout" name="horizontalLayout_8">
       <property name="spacing">
        <number>5</number>
       </property>
@@ -134,45 +131,18 @@
        </widget>
       </item>
       <item>
-       <spacer name="horizontalSpacer">
+       <spacer name="horizontalSpacer_2">
         <property name="orientation">
          <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>290</width>
+          <width>40</width>
           <height>20</height>
          </size>
         </property>
        </spacer>
       </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QFrame" name="frm_Abrir_Recargas">
-     <property name="frameShape">
-      <enum>QFrame::Shape::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Shadow::Raised</enum>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <property name="spacing">
-       <number>5</number>
-      </property>
-      <property name="leftMargin">
-       <number>5</number>
-      </property>
-      <property name="topMargin">
-       <number>5</number>
-      </property>
-      <property name="rightMargin">
-       <number>5</number>
-      </property>
-      <property name="bottomMargin">
-       <number>5</number>
-      </property>
       <item>
        <widget class="QLabel" name="lb_Data">
         <property name="minimumSize">
@@ -230,33 +200,32 @@
         </property>
        </widget>
       </item>
-      <item>
-       <spacer name="horizontalSpacer_4">
-        <property name="orientation">
-         <enum>Qt::Orientation::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
      </layout>
     </widget>
    </item>
    <item>
-    <widget class="QFrame" name="frm_Inclusao_Itens">
-     <property name="frameShape">
-      <enum>QFrame::Shape::StyledPanel</enum>
+    <widget class="QGroupBox" name="gb_Itens_Recarga">
+     <property name="title">
+      <string>Itens da Recarga</string>
      </property>
-     <property name="frameShadow">
-      <enum>QFrame::Shadow::Raised</enum>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout_3">
+     <layout class="QVBoxLayout" name="verticalLayout_4">
+      <property name="spacing">
+       <number>5</number>
+      </property>
+      <property name="leftMargin">
+       <number>5</number>
+      </property>
+      <property name="topMargin">
+       <number>5</number>
+      </property>
+      <property name="rightMargin">
+       <number>5</number>
+      </property>
+      <property name="bottomMargin">
+       <number>5</number>
+      </property>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_6">
+       <layout class="QHBoxLayout" name="horizontalLayout">
         <property name="spacing">
          <number>5</number>
         </property>
@@ -464,20 +433,44 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QPushButton" name="bt_Limpar_Item">
+          <property name="text">
+           <string>Limpar Item</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="bt_Excluir_Item">
+          <property name="text">
+           <string>Excluir Item</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
      </layout>
     </widget>
    </item>
    <item>
-    <widget class="QFrame" name="frm_Itens">
+    <widget class="QTableView" name="tb_Itens"/>
+   </item>
+   <item>
+    <widget class="QLabel" name="lb_Dica">
+     <property name="text">
+      <string>Duplo clique no item para editar · Selecione e Excluir Item para remover</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="frm_Total">
      <property name="frameShape">
       <enum>QFrame::Shape::StyledPanel</enum>
      </property>
      <property name="frameShadow">
       <enum>QFrame::Shadow::Raised</enum>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
+     <layout class="QHBoxLayout" name="horizontalLayout_5">
       <property name="spacing">
        <number>5</number>
       </property>
@@ -494,142 +487,51 @@
        <number>5</number>
       </property>
       <item>
-       <widget class="QTableView" name="tb_Itens"/>
+       <spacer name="horizontalSpacer_6">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
       </item>
       <item>
-       <widget class="QFrame" name="frm_Total">
-        <property name="frameShape">
-         <enum>QFrame::Shape::StyledPanel</enum>
+       <widget class="QLabel" name="lb_Total">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
         </property>
-        <property name="frameShadow">
-         <enum>QFrame::Shadow::Raised</enum>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>30</height>
+         </size>
         </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
-         <property name="spacing">
-          <number>5</number>
-         </property>
-         <property name="leftMargin">
-          <number>5</number>
-         </property>
-         <property name="topMargin">
-          <number>5</number>
-         </property>
-         <property name="rightMargin">
-          <number>5</number>
-         </property>
-         <property name="bottomMargin">
-          <number>5</number>
-         </property>
-         <item>
-          <spacer name="horizontalSpacer_6">
-           <property name="orientation">
-            <enum>Qt::Orientation::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QLabel" name="lb_Total">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>30</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>30</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Total:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="txt_Total">
-           <property name="minimumSize">
-            <size>
-             <width>150</width>
-             <height>30</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>150</width>
-             <height>30</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <property name="text">
+         <string>Total:</string>
+        </property>
        </widget>
       </item>
       <item>
-       <widget class="QFrame" name="frm_Crud_Item">
-        <property name="frameShape">
-         <enum>QFrame::Shape::StyledPanel</enum>
+       <widget class="QLineEdit" name="txt_Total">
+        <property name="minimumSize">
+         <size>
+          <width>150</width>
+          <height>30</height>
+         </size>
         </property>
-        <property name="frameShadow">
-         <enum>QFrame::Shadow::Raised</enum>
+        <property name="maximumSize">
+         <size>
+          <width>150</width>
+          <height>30</height>
+         </size>
         </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
-         <property name="spacing">
-          <number>5</number>
-         </property>
-         <property name="leftMargin">
-          <number>5</number>
-         </property>
-         <property name="topMargin">
-          <number>5</number>
-         </property>
-         <property name="rightMargin">
-          <number>5</number>
-         </property>
-         <property name="bottomMargin">
-          <number>5</number>
-         </property>
-         <item>
-          <widget class="QPushButton" name="bt_Limpar_Item">
-           <property name="text">
-            <string>Limpar</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="bt_Excluir_Item">
-           <property name="text">
-            <string>Excluir</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_5">
-           <property name="orientation">
-            <enum>Qt::Orientation::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QPushButton" name="bt_Sair_Recarga">
-           <property name="text">
-            <string>Sair Recarga</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
        </widget>
       </item>
      </layout>
@@ -659,6 +561,26 @@
       <property name="bottomMargin">
        <number>5</number>
       </property>
+      <item>
+       <widget class="QPushButton" name="bt_Sair_Recarga">
+        <property name="text">
+         <string>Sair Recarga</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>448</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
       <item>
        <widget class="QPushButton" name="bt_Salvar">
         <property name="minimumSize">
@@ -696,19 +618,6 @@
          <string>Editar</string>
         </property>
        </widget>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer_3">
-        <property name="orientation">
-         <enum>Qt::Orientation::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>448</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
       </item>
       <item>
        <widget class="QPushButton" name="bt_Limpar">

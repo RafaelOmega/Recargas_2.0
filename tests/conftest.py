@@ -11,6 +11,9 @@ from pathlib import Path
 import pytest
 from PySide6.QtWidgets import QMessageBox
 
+# não gera __pycache__ durante os testes (bytecode desnecessário aqui)
+sys.dont_write_bytecode = True
+
 # garante que a raiz do projeto está no sys.path (import app.*)
 RAIZ = Path(__file__).resolve().parent.parent
 if str(RAIZ) not in sys.path:
