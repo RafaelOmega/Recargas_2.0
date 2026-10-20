@@ -8,6 +8,11 @@ salvam via QFileDialog (sugestão Abastecimento_AAAA-MM-DD).
 Coluna KM/L: consumo por item (km rodados / litros). No SUBTOTAL e no
 TOTAL GERAL o valor é PONDERADO (km total / litros totais), nunca a
 média das médias — assim trechos curtos não distorcem o resultado.
+
+IMPORTANTE: os módulos de exportação (openpyxl/reportlab) são
+importados DENTRO dos métodos, nunca no topo. O CI instala apenas
+PySide6 + psycopg2 + requirements-dev; importar openpyxl/reportlab no
+topo quebra a coleta dos testes (ModuleNotFoundError).
 """
 from datetime import datetime
 
@@ -15,9 +20,6 @@ from PySide6.QtWidgets import (QDialog, QFileDialog, QHBoxLayout,
                                QMessageBox, QPushButton, QTextBrowser,
                                QVBoxLayout)
 
-from app.reports.relatorio_abastecimento_export import (
-    exportar_csv_abastecimento, exportar_xlsx_abastecimento)
-from app.reports.relatorio_abastecimento_pdf import gerar_pdf_abastecimento
 from app.utils.logger import get_logger
 
 logger = get_logger("relatorio_abastecimento_preview")
@@ -177,6 +179,10 @@ td.num, th.num {{ text-align:right; }}
         return f"Abastecimento_{datetime.now():%Y-%m-%d}.{ext}"
 
     def _gerar_pdf(self):
+        # import preguiçoso: reportlab só é necessário ao gerar o PDF
+        from app.reports.relatorio_abastecimento_pdf import (
+            gerar_pdf_abastecimento,
+        )
         caminho, _ = QFileDialog.getSaveFileName(
             self, "Salvar relatório", self._sugestao("pdf"),
             "PDF (*.pdf)")
@@ -192,6 +198,10 @@ td.num, th.num {{ text-align:right; }}
         QMessageBox.information(self, "Relatório", "PDF gerado com sucesso.")
 
     def _gerar_xlsx(self):
+        # import preguiçoso: openpyxl só é necessário ao gerar o XLSX
+        from app.reports.relatorio_abastecimento_export import (
+            exportar_xlsx_abastecimento,
+        )
         caminho, _ = QFileDialog.getSaveFileName(
             self, "Salvar relatório", self._sugestao("xlsx"),
             "Excel (*.xlsx)")
@@ -208,6 +218,10 @@ td.num, th.num {{ text-align:right; }}
             self, "Relatório", "XLSX gerado com sucesso.")
 
     def _gerar_csv(self):
+        # import preguiçoso: openpyxl só é necessário ao gerar o CSV
+        from app.reports.relatorio_abastecimento_export import (
+            exportar_csv_abastecimento,
+        )
         caminho, _ = QFileDialog.getSaveFileName(
             self, "Salvar relatório", self._sugestao("csv"),
             "CSV (*.csv)")
