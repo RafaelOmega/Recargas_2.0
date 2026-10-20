@@ -7,6 +7,10 @@ repository real) e as caixas de mensagem são interceptadas (fixture
 caixas do conftest). Teclas/atalhos são disparados pelos SINAIS
 (returnPressed.emit, activated.emit) — determinístico em CI.
 
+REGRA: todo teste que possa disparar QMessageBox (salvar, excluir,
+avisos) DEVE receber a fixture `caixas`. Sem ela o diálogo real abre
+e trava a execução em modo headless (QT_QPA_PLATFORM=offscreen).
+
 A tela de teste (TelaFake) é construída em código, com o contrato
 mínimo da base: sequência, data, grade de 2 colunas (Destino, Valor)
 e um item com destino + valor.
@@ -467,7 +471,7 @@ def test_salvar_bloqueado_sem_itens(tela, service, caixas):
     assert service.chamadas == []
 
 
-def test_salvar_em_aberta_bloqueado(tela, service):
+def test_salvar_em_aberta_bloqueado(tela, service, caixas):
     tela._novo()
     tela._abrir_lancamento()
     tela._salvar()
@@ -489,7 +493,7 @@ def test_salvar_novo_grava(tela, service, caixas):
     assert tela._modo == ESTADO_INICIAL      # tela limpa após salvar
 
 
-def test_salvar_edicao_atualiza(tela, service):
+def test_salvar_edicao_atualiza(tela, service, caixas):
     service.registros[1] = _registro_padrao()
     _carregar(tela, service)
     _fluxo_edicao(tela)
@@ -499,9 +503,10 @@ def test_salvar_edicao_atualiza(tela, service):
     dados = service.chamadas[0][1]
     assert dados["sequencia"] == 1
     assert len(dados["itens"]) == 2
+    assert caixas.alguma("salvo com sucesso")
 
 
-def test_base_injeta_versao_carregada(tela, service):
+def test_base_injeta_versao_carregada(tela, service, caixas):
     versao = datetime(2026, 10, 19, 12, 0, 0)
     service.registros[1] = _registro_padrao(atualizado_em=versao)
     _carregar(tela, service)
