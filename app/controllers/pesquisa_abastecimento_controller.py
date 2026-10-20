@@ -4,7 +4,7 @@
 Ordenação padrão: coluna Sequência (DESCENDENTE — do maior para o
 menor, ordenação NUMÉRICA). A coluna Data é exibida em formato
 brasileiro (dd/mm/aaaa). Caminhão e Colaborador são POR ITEM: as
-colunas mostram os códigos/nomes dos itens em uma única linha
+colunas mostram as PLACAS/nomes dos itens em uma única linha
 (separados por vírgula) e a coluna Itens mostra os DESTINOS em linha.
 Enter na grade confirma a seleção (como o duplo clique).
 
@@ -28,6 +28,11 @@ try:
 except ImportError:
     AbastecimentoService = None
 
+try:
+    from app.services.caminhao_service import CaminhaoService
+except ImportError:
+    CaminhaoService = None
+
 logger = get_logger("pesquisa_abastecimentos")
 
 
@@ -40,12 +45,19 @@ class PesquisaAbastecimentoController(PesquisaBase):
 
         self._service = (AbastecimentoService()
                          if AbastecimentoService else None)
+        self._caminhao_service = (CaminhaoService()
+                                  if CaminhaoService else None)
         self._grade = self.ui.tb_Abastecimento
         self._colunas = ["Sequência", "Data", "Caminhão", "Colaborador",
                          "Itens"]
         self._coluna_padrao = 0  # Sequência
         self._coluna_stretch = 4
         self._ordem_padrao = Qt.SortOrder.DescendingOrder
+
+        # cadastro cargado ANTES do _inicializar: a carga inicial da
+        # grade já mostra as placas na columna Caminhão
+        self._caminhoes = []
+        self._carregar_caminhoes()
 
         self._inicializar()
 
@@ -73,7 +85,7 @@ class PesquisaAbastecimentoController(PesquisaBase):
                 self._item_ordenavel(
                     data.strftime("%d/%m/%Y"),
                     data.isoformat()),
-                # vínculos são POR ITEM: códigos dos itens em linha;
+                # vínculos são POR ITEM: placas dos itens em linha;
                 # ordena pelo próprio texto
                 self._item_ordenavel(caminhoes, caminhoes),
                 # nomes dos colaboradores dos itens em linha;
@@ -118,15 +130,41 @@ class PesquisaAbastecimentoController(PesquisaBase):
         except ValueError:
             return datetime.strptime(texto, "%d/%m/%Y").date()
 
-    @staticmethod
-    def _caminhoes_em_linha(abastecimento: Abastecimento) -> str:
-        """Códigos de caminhão dos itens em uma única linha (sem repetir)."""
-        codigos = []
+    def _caminhoes_em_linha(self, abastecimento: Abastecimento) -> str:
+        """Placas de caminhão dos itens em uma única linha (sem repetir).
+
+        A placa vem do cadastro cargado; se o caminhão não existe (ou
+        não tem placa), cai ao código do snapshot.
+        """
+        placas = []
         for item in (abastecimento.itens or []):
             codigo = item.caminhao_codigo or ""
-            if codigo and codigo not in codigos:
-                codigos.append(codigo)
-        return ", ".join(codigos)
+            if not codigo:
+                continue
+            placa = self._placa_caminhao(codigo) or codigo
+            if placa not in placas:
+                placas.append(placa)
+        return ", ".join(placas)
+
+    def _placa_caminhao(self, codigo: str) -> str:
+        """Placa do caminhão no cadastro cargado ("" se não existe)."""
+        for caminhao in self._caminhoes:
+            if caminhao.codigo == codigo:
+                return caminhao.placa or ""
+        return ""
+
+    def _carregar_caminhoes(self):
+        """Carrega o cadastro para mostrar a placa na columna Caminhão."""
+        self._caminhoes = []
+        if self._caminhao_service is None:
+            return
+        try:
+            self._caminhoes = self._caminhao_service.pesquisar("")
+        except Exception as exc:
+            logger.exception("Falha ao cargar caminhões")
+            QMessageBox.critical(
+                self, "Erro",
+                f"Não foi possível cargar caminhões:\n{exc}")
 
     @staticmethod
     def _colaboradores_em_linha(abastecimento: Abastecimento) -> str:

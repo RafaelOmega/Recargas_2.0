@@ -13,17 +13,18 @@ recente). Aqui ficam apenas as particularidades da tela.
 Vínculos POR ITEM: caminhão e colaborador pertencem a cada item da
 grade (não ao cabeçalho, que fica só com sequência e data). Com o
 lançamento aberto, digite o código e pressione Enter (campo vazio +
-Enter abre a pesquisa) ou clique em "..." — a descrição (modelo/nome)
+Enter abre la pesquisa) ou clique em "..." — a descrição (modelo/nome)
 é preenchida automaticamente e fica somente leitura; digitar no
 código invalida a seleção.
 
 Itens: destino + KM início/final (livres) + litros (> 0). A grade tem
-7 colunas; o código do colaborador fica no Qt.UserRole da célula 3
-(para o snapshot na gravação). Snapshots antigos são localizados no
-cadastro carregado na reedição (_localizar_caminhao/
+7 colunas; a columna Caminhão mostra a PLACA (código no Qt.UserRole
+da célula 0) e o código do colaborador fica no Qt.UserRole da célula
+2 (para o snapshot na gravação). Snapshots antigos são localizados no
+cadastro cargado na reedição (_localizar_caminhao/
 _localizar_colaborador); sem cadastro, viram entrada temporária.
 
-Navegação (Tab) em modo Z: esquerda para a direita e de cima para
+Navegación (Tab) em modo Z: esquerda para a direita e de cima para
 baixo — com o abastecimento aberto, os widgets fora do fluxo de itens
 estão desabilitados e são pulados pelo Qt.
 """
@@ -56,7 +57,8 @@ except ImportError:
 
 logger = get_logger("lancamento_abastecimentos")
 
-# grade: código do colaborador fica no Qt.UserRole da célula 2
+# grade: código do caminhão fica no Qt.UserRole da célula 0 (placa à
+# vista) e código do colaborador no Qt.UserRole da célula 2
 COLUNAS_ITENS = ["Caminhão", "Modelo", "Colaborador", "Destino",
                  "KM Início", "KM Final", "Litros"]
 
@@ -273,11 +275,14 @@ class LancamentoAbastecimentoController(LancamentoBase):
     def _linha_item(self):
         caminhao = self._caminhao_selecionado
         colaborador = self._colaborador_selecionado
+        cel_caminhao = QStandardItem(caminhao.placa or caminhao.codigo or "")
+        # valor real no UserRole: código do caminhão para o snapshot
+        cel_caminhao.setData(caminhao.codigo or "", Qt.UserRole)
         cel_colaborador = QStandardItem(colaborador.nome or "")
         # valor real no UserRole: código do colaborador para o snapshot
         cel_colaborador.setData(colaborador.codigo or "", Qt.UserRole)
         return [
-            QStandardItem(caminhao.codigo or ""),
+            cel_caminhao,
             QStandardItem(caminhao.modelo or ""),
             cel_colaborador,
             QStandardItem(self.ui.txt_Destino.text().strip()),
@@ -287,14 +292,15 @@ class LancamentoAbastecimentoController(LancamentoBase):
         ]
 
     def _carregar_item_campos(self, linha: int):
+        cel_caminhao = self._modelo.item(linha, 0)
         caminhao = self._localizar_caminhao(
-            self._modelo.item(linha, 0).text(),
+            str(cel_caminhao.data(Qt.UserRole) or ""),
             self._modelo.item(linha, 1).text())
         if caminhao is not None:
             self._aplicar_caminhao(caminhao)
         cel_colaborador = self._modelo.item(linha, 2)
         colaborador = self._localizar_colaborador(
-            cel_colaborador.data(Qt.UserRole) or "",
+            str(cel_colaborador.data(Qt.UserRole) or ""),
             cel_colaborador.text(),
             "")
         if colaborador is not None:
@@ -338,12 +344,20 @@ class LancamentoAbastecimentoController(LancamentoBase):
 
     def _popular_grade(self, abastecimento):
         for item in abastecimento.itens:
+            caminhao = self._localizar_caminhao(
+                item.caminhao_codigo or "", item.caminhao_modelo or "")
+            placa = ((caminhao.placa or caminhao.codigo)
+                     if caminhao is not None
+                     else (item.caminhao_codigo or ""))
+            cel_caminhao = QStandardItem(placa)
+            # valor real no UserRole: código do caminhão do snapshot
+            cel_caminhao.setData(item.caminhao_codigo or "", Qt.UserRole)
             cel_colaborador = QStandardItem(item.colaborador_nome or "")
             # valor real no UserRole: código do colaborador do snapshot
             cel_colaborador.setData(item.colaborador_codigo or "",
                                     Qt.UserRole)
             self._modelo.appendRow([
-                QStandardItem(item.caminhao_codigo or ""),
+                cel_caminhao,
                 QStandardItem(item.caminhao_modelo or ""),
                 cel_colaborador,
                 QStandardItem(item.destino or ""),
@@ -355,9 +369,11 @@ class LancamentoAbastecimentoController(LancamentoBase):
     def _coletar_itens(self):
         itens = []
         for linha in range(self._modelo.rowCount()):
+            cel_caminhao = self._modelo.item(linha, 0)
             cel_colaborador = self._modelo.item(linha, 2)
             itens.append({
-                "caminhao_codigo": self._modelo.item(linha, 0).text(),
+                "caminhao_codigo": str(
+                    cel_caminhao.data(Qt.UserRole) or ""),
                 "caminhao_modelo": self._modelo.item(linha, 1).text(),
                 "colaborador_codigo": str(
                     cel_colaborador.data(Qt.UserRole) or ""),
@@ -386,10 +402,10 @@ class LancamentoAbastecimentoController(LancamentoBase):
         try:
             self._caminhoes = self._caminhao_service.pesquisar("")
         except Exception as exc:
-            logger.exception("Falha ao carregar caminhões")
+            logger.exception("Falha ao cargar caminhões")
             QMessageBox.critical(
                 self, "Erro",
-                f"Não foi possível carregar caminhões:\n{exc}")
+                f"Não foi possível cargar caminhões:\n{exc}")
 
     def _carregar_colaboradores(self):
         """Carrega o cadastro para localizar snapshots na reedição."""
@@ -399,10 +415,10 @@ class LancamentoAbastecimentoController(LancamentoBase):
         try:
             self._colaboradores = self._colaborador_service.pesquisar("")
         except Exception as exc:
-            logger.exception("Falha ao carregar colaboradores")
+            logger.exception("Falha ao cargar colaboradores")
             QMessageBox.critical(
                 self, "Erro",
-                f"Não foi possível carregar colaboradores:\n{exc}")
+                f"Não foi possível cargar colaboradores:\n{exc}")
 
     # ---------------- selecao de caminhao (do item) ----------------
 
@@ -473,7 +489,7 @@ class LancamentoAbastecimentoController(LancamentoBase):
 
     def _localizar_caminhao(self, codigo: str,
                             modelo: str) -> Caminhao | None:
-        """Localiza o caminhão do snapshot no cadastro carregado.
+        """Localiza o caminhão do snapshot no cadastro cargado.
 
         Snapshots antigos podem divergir do cadastro atual, então a
         comparação nunca é textual estrita.
@@ -561,7 +577,7 @@ class LancamentoAbastecimentoController(LancamentoBase):
 
     def _localizar_colaborador(self, codigo: str, nome: str,
                                documento: str) -> Colaborador | None:
-        """Localiza o colaborador do snapshot no cadastro carregado.
+        """Localiza o colaborador do snapshot no cadastro cargado.
 
         1) código igual; 2) documento igual (apenas dígitos);
         3) nome igual ignorando maiúsculas/minúsculas e espaços.

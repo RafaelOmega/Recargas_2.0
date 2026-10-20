@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'pesquisa_abastecimentotKFTwB.ui'
+## Form generated from reading UI file 'pesquisa_abastecimentoDKpLhs.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -23,7 +23,7 @@ class Ui_Pesquisa_Abastecimento(object):
     def setupUi(self, Pesquisa_Abastecimento):
         if not Pesquisa_Abastecimento.objectName():
             Pesquisa_Abastecimento.setObjectName(u"Pesquisa_Abastecimento")
-        Pesquisa_Abastecimento.resize(781, 430)
+        Pesquisa_Abastecimento.resize(975, 430)
         font = QFont()
         font.setFamilies([u"Segoe UI Semibold"])
         font.setPointSize(12)
