@@ -1,5 +1,18 @@
 # -*- coding: utf-8 -*-
-"""Repositório do relatório de recargas por colaborador (PostgreSQL)."""
+"""Repositório do relatório de recargas por colaborador (PostgreSQL).
+
+Conexão por operação: cada consulta abre, usa e fecha a conexão —
+mesmo padrão dos demais repositories. Queda de rede ou restart do
+PostgreSQL não deixa o app preso a uma conexão morta; a próxima
+consulta reconecta sozinha.
+
+CORRIGIDO em 2.8.2: mesmo vazamento do relatório de abastecimento —
+o construtor abria a conexão e nunca a fechava. Agora a conexão é
+obtida dentro do método e fechada no finally; `conn` injetado
+(testes) continua sendo usado e NÃO é fechado pelo repositório.
+"""
+from contextlib import contextmanager
+
 from app.database import get_connection
 from app.models.relatorio_recarga_colaborador import ItemRecargaRelatorio
 from app.utils.logger import get_logger
@@ -10,7 +23,18 @@ logger = get_logger("relatorio_recarga_colaborador_repository")
 class RelatorioRecargaColaboradorRepository:
 
     def __init__(self, conn=None):
-        self._conn = conn or get_connection()
+        """conn opcional (injeção em testes); None = conexão por operação."""
+        self._conn = conn
+
+    @contextmanager
+    def _conexao(self):
+        """Conexão da operação: injetada (testes) ou nova (produção)."""
+        conn = self._conn if self._conn is not None else get_connection()
+        try:
+            yield conn
+        finally:
+            if self._conn is None:
+                conn.close()
 
     def itens_por_colaborador(self, nome: str = "",
                               documento: str = "",
@@ -26,6 +50,9 @@ class RelatorioRecargaColaboradorRepository:
         informado; senão, correspondência parcial no nome do item;
         sem colaborador informado, traz TODOS. Período opcional
         restringe pela data da recarga (inclusivo nas duas pontas).
+
+        Todos os filtros vão como PARÂMETRO (%s) — a entrada do
+        usuário nunca é interpolada no SQL.
         """
         clausulas: list[str] = []
         params: list = []
@@ -39,7 +66,6 @@ class RelatorioRecargaColaboradorRepository:
             clausulas.append("ri.nome ILIKE %s")
             params.append(f"%{nome}%")
         # sem documento e sem nome: todos os colaboradores
-
         if data_inicial is not None:
             clausulas.append("r.data >= %s")
             params.append(data_inicial)
@@ -48,26 +74,28 @@ class RelatorioRecargaColaboradorRepository:
             params.append(data_final)
 
         where = " AND ".join(clausulas) if clausulas else "TRUE"
-        with self._conn:
-            with self._conn.cursor() as cur:
-                cur.execute(
-                    "SELECT r.sequencia, r.data, ri.nome, ri.documento, "
-                    "       ri.carga, ri.sem_carga, ri.valor, "
-                    "       ri.beneficio "
-                    "FROM recargas_itens ri "
-                    "JOIN recargas r ON r.id = ri.recarga_id "
-                    f"WHERE {where} "
-                    "ORDER BY ri.nome, r.data, r.sequencia",
-                    tuple(params),
-                )
-                registros = [
-                    ItemRecargaRelatorio(
-                        sequencia=l[0], data=l[1], nome=l[2] or "",
-                        documento=l[3] or "", carga=l[4] or "",
-                        sem_carga=l[5] or "", valor=float(l[6] or 0),
-                        beneficio=l[7] or "",
+        with self._conexao() as conn:
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT r.sequencia, r.data, ri.nome, "
+                        "       ri.documento, ri.carga, ri.sem_carga, "
+                        "       ri.valor, ri.beneficio "
+                        "FROM recargas_itens ri "
+                        "JOIN recargas r ON r.id = ri.recarga_id "
+                        f"WHERE {where} "
+                        "ORDER BY ri.nome, r.data, r.sequencia",
+                        tuple(params),
                     )
-                    for l in cur.fetchall()
-                ]
+                    registros = [
+                        ItemRecargaRelatorio(
+                            sequencia=l[0], data=l[1], nome=l[2] or "",
+                            documento=l[3] or "", carga=l[4] or "",
+                            sem_carga=l[5] or "",
+                            valor=float(l[6] or 0),
+                            beneficio=l[7] or "",
+                        )
+                        for l in cur.fetchall()
+                    ]
         logger.info("Relatório: %s item(s) carregado(s)", len(registros))
         return registros

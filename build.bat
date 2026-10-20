@@ -57,7 +57,8 @@ if exist "requirements.txt" (
     exit /b 1
   )
 ) else (
-  pip install pyinstaller PySide6 sqlalchemy psycopg2-binary
+  REM SQLAlchemy nao e usado: o acesso a dados e psycopg2 direto
+  pip install pyinstaller PySide6 psycopg2-binary openpyxl reportlab
   if errorlevel 1 (
     echo ERRO: Falha ao instalar dependencias basicas.
     pause
@@ -104,6 +105,9 @@ REM WebEngine (dashboard Power BI): --collect-all garante que o
 REM QtWebEngineProcess.exe, os recursos do Chromium (.pak, icudtl.dat)
 REM e as locales entrem no exe. Sem isso o dashboard abre em branco
 REM no exe mesmo funcionando no Python.
+REM
+REM (2.8.2) Removidos os --hidden-import de sqlalchemy: o sistema usa
+REM psycopg2 direto, SQLAlchemy nao esta no codigo nem no requirements.
 echo Iniciando build...
 pyinstaller ^
   --noconfirm ^
@@ -117,8 +121,6 @@ pyinstaller ^
   --hidden-import="psycopg2" ^
   --hidden-import="psycopg2.extensions" ^
   --hidden-import="psycopg2.extras" ^
-  --hidden-import="sqlalchemy.dialects.postgresql" ^
-  --hidden-import="sqlalchemy.dialects.postgresql.psycopg2" ^
   --collect-submodules="app" ^
   --collect-all PySide6.QtWebEngineWidgets ^
   --collect-all PySide6.QtWebEngineCore ^
