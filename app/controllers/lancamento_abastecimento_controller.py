@@ -13,18 +13,18 @@ recente). Aqui ficam apenas as particularidades da tela.
 Vínculos POR ITEM: caminhão e colaborador pertencem a cada item da
 grade (não ao cabeçalho, que fica só com sequência e data). Com o
 lançamento aberto, digite o código e pressione Enter (campo vazio +
-Enter abre la pesquisa) ou clique em "..." — a descrição (modelo/nome)
+Enter abre a pesquisa) ou clique em "..." — a descrição (modelo/nome)
 é preenchida automaticamente e fica somente leitura; digitar no
 código invalida a seleção.
 
 Itens: destino + KM início/final (livres) + litros (> 0). A grade tem
-7 colunas; a columna Caminhão mostra a PLACA (código no Qt.UserRole
+7 colunas; a coluna Caminhão mostra a PLACA (código no Qt.UserRole
 da célula 0) e o código do colaborador fica no Qt.UserRole da célula
 2 (para o snapshot na gravação). Snapshots antigos são localizados no
-cadastro cargado na reedição (_localizar_caminhao/
+cadastro carregado na reedição (_localizar_caminhao/
 _localizar_colaborador); sem cadastro, viram entrada temporária.
 
-Navegación (Tab) em modo Z: esquerda para a direita e de cima para
+Navegação (Tab) em modo Z: esquerda para a direita e de cima para
 baixo — com o abastecimento aberto, os widgets fora do fluxo de itens
 estão desabilitados e são pulados pelo Qt.
 """
@@ -402,10 +402,10 @@ class LancamentoAbastecimentoController(LancamentoBase):
         try:
             self._caminhoes = self._caminhao_service.pesquisar("")
         except Exception as exc:
-            logger.exception("Falha ao cargar caminhões")
+            logger.exception("Falha ao carregar caminhões")
             QMessageBox.critical(
                 self, "Erro",
-                f"Não foi possível cargar caminhões:\n{exc}")
+                f"Não foi possível carregar caminhões:\n{exc}")
 
     def _carregar_colaboradores(self):
         """Carrega o cadastro para localizar snapshots na reedição."""
@@ -415,10 +415,10 @@ class LancamentoAbastecimentoController(LancamentoBase):
         try:
             self._colaboradores = self._colaborador_service.pesquisar("")
         except Exception as exc:
-            logger.exception("Falha ao cargar colaboradores")
+            logger.exception("Falha ao carregar colaboradores")
             QMessageBox.critical(
                 self, "Erro",
-                f"Não foi possível cargar colaboradores:\n{exc}")
+                f"Não foi possível carregar colaboradores:\n{exc}")
 
     # ---------------- selecao de caminhao (do item) ----------------
 
@@ -489,7 +489,7 @@ class LancamentoAbastecimentoController(LancamentoBase):
 
     def _localizar_caminhao(self, codigo: str,
                             modelo: str) -> Caminhao | None:
-        """Localiza o caminhão do snapshot no cadastro cargado.
+        """Localiza o caminhão do snapshot no cadastro carregado.
 
         Snapshots antigos podem divergir do cadastro atual, então a
         comparação nunca é textual estrita.
@@ -577,7 +577,7 @@ class LancamentoAbastecimentoController(LancamentoBase):
 
     def _localizar_colaborador(self, codigo: str, nome: str,
                                documento: str) -> Colaborador | None:
-        """Localiza o colaborador do snapshot no cadastro cargado.
+        """Localiza o colaborador do snapshot no cadastro carregado.
 
         1) código igual; 2) documento igual (apenas dígitos);
         3) nome igual ignorando maiúsculas/minúsculas e espaços.

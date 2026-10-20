@@ -54,8 +54,8 @@ class PesquisaAbastecimentoController(PesquisaBase):
         self._coluna_stretch = 4
         self._ordem_padrao = Qt.SortOrder.DescendingOrder
 
-        # cadastro cargado ANTES do _inicializar: a carga inicial da
-        # grade já mostra as placas na columna Caminhão
+        # cadastro carregado ANTES do _inicializar: a carga inicial da
+        # grade já mostra as placas na coluna Caminhão
         self._caminhoes = []
         self._carregar_caminhoes()
 
@@ -133,7 +133,7 @@ class PesquisaAbastecimentoController(PesquisaBase):
     def _caminhoes_em_linha(self, abastecimento: Abastecimento) -> str:
         """Placas de caminhão dos itens em uma única linha (sem repetir).
 
-        A placa vem do cadastro cargado; se o caminhão não existe (ou
+        A placa vem do cadastro carregado; se o caminhão não existe (ou
         não tem placa), cai ao código do snapshot.
         """
         placas = []
@@ -147,24 +147,24 @@ class PesquisaAbastecimentoController(PesquisaBase):
         return ", ".join(placas)
 
     def _placa_caminhao(self, codigo: str) -> str:
-        """Placa do caminhão no cadastro cargado ("" se não existe)."""
+        """Placa do caminhão no cadastro carregado ("" se não existe)."""
         for caminhao in self._caminhoes:
             if caminhao.codigo == codigo:
                 return caminhao.placa or ""
         return ""
 
     def _carregar_caminhoes(self):
-        """Carrega o cadastro para mostrar a placa na columna Caminhão."""
+        """Carrega o cadastro para mostrar a placa na coluna Caminhão."""
         self._caminhoes = []
         if self._caminhao_service is None:
             return
         try:
             self._caminhoes = self._caminhao_service.pesquisar("")
         except Exception as exc:
-            logger.exception("Falha ao cargar caminhões")
+            logger.exception("Falha ao carregar caminhões")
             QMessageBox.critical(
                 self, "Erro",
-                f"Não foi possível cargar caminhões:\n{exc}")
+                f"Não foi possível carregar caminhões:\n{exc}")
 
     @staticmethod
     def _colaboradores_em_linha(abastecimento: Abastecimento) -> str:
