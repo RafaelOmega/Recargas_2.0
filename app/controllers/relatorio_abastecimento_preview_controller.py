@@ -4,6 +4,10 @@
 Layout em BLOCOS por caminhão (barra azul código+modelo+placa, tabela
 de itens, SUBTOTAL; TOTAL GERAL só com 2+ blocos). Botões PDF/XLSX/CSV
 salvam via QFileDialog (sugestão Abastecimento_AAAA-MM-DD).
+
+Coluna KM/L: consumo por item (km rodados / litros). No SUBTOTAL e no
+TOTAL GERAL o valor é PONDERADO (km total / litros totais), nunca a
+média das médias — assim trechos curtos não distorcem o resultado.
 """
 from datetime import datetime
 
@@ -33,7 +37,7 @@ class RelatorioAbastecimentoPreviewController(QDialog):
     def __init__(self, itens, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Relatório de Abastecimento")
-        self.resize(980, 600)
+        self.resize(1040, 600)
         self._itens = itens
 
         self._html = QTextBrowser(self)
@@ -66,15 +70,17 @@ class RelatorioAbastecimentoPreviewController(QDialog):
     def _montar_html(self) -> str:
         blocos = []
         total_geral = 0.0
+        total_km = 0
         atual = None
         itens_bloco = []
 
         def fechar_bloco():
-            nonlocal itens_bloco, total_geral
+            nonlocal itens_bloco, total_geral, total_km
             if not itens_bloco:
                 return
             subtotal = sum(i.litros for i in itens_bloco)
             total_geral += subtotal
+            total_km += sum(i.km_rodados for i in itens_bloco)
             blocos.append(self._bloco_html(atual, itens_bloco, subtotal))
             itens_bloco = []
 
@@ -88,7 +94,7 @@ class RelatorioAbastecimentoPreviewController(QDialog):
 
         corpo = "".join(blocos)
         if len(blocos) > 1:
-            corpo += self._total_geral_html(total_geral)
+            corpo += self._total_geral_html(total_geral, total_km)
 
         return f"""<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>
@@ -119,23 +125,44 @@ td.num, th.num {{ text-align:right; }}
                 f"<td>{i.destino}</td>"
                 f"<td class='num'>{i.km_inicio}</td>"
                 f"<td class='num'>{i.km_final}</td>"
-                f"<td class='num'>{i.litros:.2f}</td></tr>")
+                f"<td class='num'>{i.litros:.2f}</td>"
+                f"<td class='num'>{self._km_l(i)}</td></tr>")
         primeiro = itens[0]
         titulo = (f"{primeiro.caminhao_codigo} · {primeiro.caminhao_modelo}"
                   f" · {primeiro.placa}")
+        km_bloco = sum(i.km_rodados for i in itens)
         return (
             f"<div class='bloco'><div class='cab'>{titulo}</div>"
             "<table><tr><th>Seq.</th><th>Data</th><th>Colaborador</th>"
             "<th>Destino</th><th class='num'>KM Início</th>"
-            "<th class='num'>KM Final</th><th class='num'>Litros</th></tr>"
+            "<th class='num'>KM Final</th><th class='num'>Litros</th>"
+            "<th class='num'>KM/L</th></tr>"
             + "".join(linhas)
             + f"<tr class='subtotal'><td colspan='6'>SUBTOTAL</td>"
-              f"<td class='num'>{subtotal:.2f}</td></tr>"
+              f"<td class='num'>{subtotal:.2f}</td>"
+              f"<td class='num'>{self._km_l_ponderado(km_bloco, subtotal)}"
+              f"</td></tr>"
               "</table></div>")
 
-    def _total_geral_html(self, total) -> str:
-        return (f"<table><tr class='total-geral'><td>TOTAL GERAL</td>"
-                f"<td class='num'>{total:.2f}</td></tr></table>")
+    def _total_geral_html(self, total, total_km) -> str:
+        return (f"<table><tr class='total-geral'>"
+                f"<td colspan='6'>TOTAL GERAL</td>"
+                f"<td class='num'>{total:.2f}</td>"
+                f"<td class='num'>{self._km_l_ponderado(total_km, total)}"
+                f"</td></tr></table>")
+
+    @staticmethod
+    def _km_l(item) -> str:
+        """KM/L do item formatado, ou '—' quando não há litros."""
+        valor = item.km_por_litro
+        return "—" if valor is None else f"{valor:.2f}"
+
+    @staticmethod
+    def _km_l_ponderado(km: int, litros: float) -> str:
+        """KM/L do conjunto: km total / litros totais."""
+        if litros <= 0:
+            return "—"
+        return f"{km / litros:.2f}"
 
     def _periodo(self) -> str:
         datas = [i.data for i in self._itens if i.data]

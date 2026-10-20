@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Exportação do relatório de abastecimento (XLSX e CSV)."""
+"""Exportação do relatório de abastecimento (XLSX e CSV).
+
+A coluna KM/L é gravada como NÚMERO (2 casas), não texto — assim o
+Excel consegue somar, ordenar e formatar. Trechos sem litros ficam
+vazios em vez de "—", para não poluir a coluna numérica.
+"""
 import csv
 
 from openpyxl import Workbook
@@ -7,7 +12,13 @@ from openpyxl.styles import Font
 
 _CABECALHO = ["Sequência", "Data", "Caminhão", "Modelo", "Placa",
               "Colaborador", "Destino", "KM Início", "KM Final",
-              "Litros"]
+              "Litros", "KM/L"]
+
+
+def _km_l(item):
+    """KM/L numérico (2 casas) ou "" quando não há litros."""
+    valor = item.km_por_litro
+    return "" if valor is None else round(valor, 2)
 
 
 def _linha(item):
@@ -22,6 +33,7 @@ def _linha(item):
         item.km_inicio,
         item.km_final,
         item.litros,
+        _km_l(item),
     ]
 
 
