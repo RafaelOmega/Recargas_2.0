@@ -31,4 +31,4 @@ jobs:
           pip install PySide6==6.11.2 psycopg2-binary -r requirements-dev.txt
 
       - name: Rodar a suite
-        run: pytest -q
+        run: pytest -q --timeout=120

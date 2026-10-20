@@ -4,6 +4,13 @@
 Os testes NÃO tocam no banco: os services são substituídos por falsos
 (mesma interface, dados em memória) e as caixas de mensagem
 (QMessageBox) são interceptadas para não bloquear a execução.
+
+A fixture `caixas` é AUTOUSE: intercepta QMessageBox em TODOS os
+testes, sem precisar declarar o parâmetro. Sem isso, um modal real
+abre em modo headless (QT_QPA_PLATFORM=offscreen) e trava a execução
+para sempre. Testes que precisam inspecionar as mensagens (ou mudar
+a resposta do question) declaram `caixas` normalmente — a fixture
+autouse é a mesma instância injetada por nome.
 """
 import sys
 from pathlib import Path
@@ -34,7 +41,7 @@ class _Caixas:
         return any(trecho in texto for (_, texto) in self.registro)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def caixas(monkeypatch):
     """Intercepta QMessageBox.information/warning/critical/question.
 
@@ -42,6 +49,9 @@ def caixas(monkeypatch):
     chamada e devolve resposta padrão; question devolve
     caixas.resposta_question (mutável durante o teste para simular
     o Sim/Não do usuário).
+
+    autouse=True: aplica-se a TODOS os testes do projeto, mesmo os
+    que não declaram o parâmetro — nenhum modal real abre em headless.
     """
     caixas = _Caixas()
 

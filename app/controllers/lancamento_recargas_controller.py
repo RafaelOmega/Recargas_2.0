@@ -175,11 +175,17 @@ class LancamentoRecargasController(LancamentoBase):
         self.setTabOrder(self.ui.bt_Limpar, self.ui.bt_Excluir)
 
     def _conectar_especifico(self):
-        """Código do colaborador: Enter resolve; digitar invalida."""
+        """Código do colaborador: Enter resolve; digitar invalida.
+
+        O botão "..." (bt_Pesquisar_Colaborador) abre a pesquisa — sem
+        essa conexão o clique não faz nada.
+        """
         self.ui.txt_Cod_Colaborador.returnPressed.connect(
             self._buscar_colaborador_por_codigo)
         self.ui.txt_Cod_Colaborador.textEdited.connect(
             self._colaborador_digitado)
+        self.ui.bt_Pesquisar_Colaborador.clicked.connect(
+            self._pesquisar_colaborador)
 
     def _foco_apos_abrir(self):
         self.ui.txt_Cod_Colaborador.setFocus()
