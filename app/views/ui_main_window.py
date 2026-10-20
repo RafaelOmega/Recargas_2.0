@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'main_windowRUUEac.ui'
+## Form generated from reading UI file 'main_windowJsTjXu.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.2
 ##
@@ -47,6 +47,8 @@ class Ui_MainWindow(object):
         self.actionCaminhoes.setObjectName(u"actionCaminhoes")
         self.actionAbastecimento = QAction(MainWindow)
         self.actionAbastecimento.setObjectName(u"actionAbastecimento")
+        self.actionRelAbastecimento = QAction(MainWindow)
+        self.actionRelAbastecimento.setObjectName(u"actionRelAbastecimento")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
@@ -176,6 +178,7 @@ class Ui_MainWindow(object):
         self.menuLancamentos.addAction(self.actionAbastecimento)
         self.menuRelatorios.addAction(self.actionRecarga_Colaborador)
         self.menuRelatorios.addAction(self.actionDash_Refeicao)
+        self.menuRelatorios.addAction(self.actionRelAbastecimento)
 
         self.retranslateUi(MainWindow)
 
@@ -192,6 +195,7 @@ class Ui_MainWindow(object):
         self.actionDash_Refeicao.setText(QCoreApplication.translate("MainWindow", u"DashBoard Recargas", None))
         self.actionCaminhoes.setText(QCoreApplication.translate("MainWindow", u"Caminh\u00f5es", None))
         self.actionAbastecimento.setText(QCoreApplication.translate("MainWindow", u"Abastecimento", None))
+        self.actionRelAbastecimento.setText(QCoreApplication.translate("MainWindow", u"Abastecimento", None))
         self.lb_Saldo_Conta.setText(QCoreApplication.translate("MainWindow", u"Saldo Conta:", None))
 #if QT_CONFIG(tooltip)
         self.txt_Saldo_Conta.setToolTip(QCoreApplication.translate("MainWindow", u"Saldo da conta Biz (recargas - saldos)", None))

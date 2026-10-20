@@ -9,7 +9,7 @@ Cada tela é uma chave em _TELAS; a factory do seu controller é
 registrada em _criadores.
 
 Navegação por teclado (sem depender do mouse):
-  - Ctrl+1..Ctrl+8 abre cada tela na ordem do _TELAS (se já aberta,
+  - Ctrl+1..Ctrl+9 abre cada tela na ordem do _TELAS (se já aberta,
     apenas traz para frente);
   - Ctrl+Tab / Ctrl+Shift+Tab alternam a subjanela ativa
     (próxima/anterior);
@@ -51,6 +51,9 @@ from app.controllers.lancamento_abastecimento_controller import (
 from app.controllers.lancamento_recargas_controller import (
     LancamentoRecargasController,
 )
+from app.controllers.relatorio_abastecimento_controller import (
+    RelatorioAbastecimentoController,
+)
 from app.controllers.relatorio_recarga_colaborador_controller import (
     RelRecargaColaboradorController,
 )
@@ -68,7 +71,7 @@ logger = get_logger("main_window")
 # chave -> (nome do QAction na UI, título da janela)
 # Somente actions realmente adicionadas a um menu no Qt Designer.
 # Ao adicionar/renomear actions no Designer, ajuste apenas este dicionário.
-# A ORDEM define os atalhos globais: Ctrl+1 abre a primeira, Ctrl+8 a última.
+# A ORDEM define os atalhos globais: Ctrl+1 abre a primeira, Ctrl+9 a última.
 _TELAS = {
     "colaboradores": ("actionCad_Colaboradores", "Colaboradores"),
     "caminhoes": ("actionCaminhoes", "Caminhões"),
@@ -80,9 +83,14 @@ _TELAS = {
     "dash_refeicao": ("actionDash_Refeicao", "Dashboard Refeição"),
     "abastecimentos": ("actionAbastecimento",
                        "Lançamento de Abastecimento"),
+    # nova tela entra no FIM para não deslocar os atalhos já em uso
+    "rel_abastecimento": ("actionRelAbastecimento",
+                          "Abastecimento por Caminhão"),
 }
+
 # intervalo de atualização automática do saldo da conta (30 s)
 INTERVALO_SALDO_MS = 30_000
+
 # estilo do campo de saldo (chip sobre a barra azul da barra de status)
 _ESTILO_SALDO = (
     "QLineEdit{background:rgba(255,255,255,0.12);"
@@ -119,7 +127,6 @@ class MainWindowController(QMainWindow):
         self.ui.setupUi(self)
         self._criadores = {}   # chave -> factory do controller da tela
         self._subjanelas = {}  # chave -> QMdiSubWindow aberta
-
         self._service_saldo = (SaldoContaService()
                                if SaldoContaService else None)
 
@@ -131,14 +138,14 @@ class MainWindowController(QMainWindow):
 
         logger.info("Janela principal iniciada")
 
-        self._criadores["colaboradores"] = lambda pai: CadColaboradoresController(
-            pai)
+        self._criadores["colaboradores"] = lambda pai: (
+            CadColaboradoresController(pai))
         self._criadores["caminhoes"] = lambda pai: CadCaminhoesController(
             pai)
         self._criadores["usuarios"] = lambda pai: CadUsuariosController(
             pai)
-        self._criadores["recargas"] = lambda pai: LancamentoRecargasController(
-            pai)
+        self._criadores["recargas"] = lambda pai: (
+            LancamentoRecargasController(pai))
         self._criadores["saldo_biz"] = lambda pai: CadSaldoContaController(
             pai)
         self._criadores["rel_recarga_colaborador"] = lambda pai: (
@@ -147,6 +154,8 @@ class MainWindowController(QMainWindow):
             DashRefeicaoController(pai))
         self._criadores["abastecimentos"] = lambda pai: (
             LancamentoAbastecimentoController(pai))
+        self._criadores["rel_abastecimento"] = lambda pai: (
+            RelatorioAbastecimentoController(pai))
 
     # ---------------- configuração ----------------
 
@@ -156,7 +165,8 @@ class MainWindowController(QMainWindow):
         # fixo do .ui é sobrescrito aqui a cada abertura
         if hasattr(self.ui, "lb_Versao"):
             self.ui.lb_Versao.setText(f"Versão {__version__}")
-        self.ui.mdiArea.subWindowActivated.connect(self._ao_ativar_subjanela)
+        self.ui.mdiArea.subWindowActivated.connect(
+            self._ao_ativar_subjanela)
 
     def _conectar_acoes(self):
         """Liga cada QAction do menu à abertura da sua tela.
@@ -164,7 +174,7 @@ class MainWindowController(QMainWindow):
         Usa getattr: action ausente na UI é apenas ignorada (com aviso
         no log), então atualizar o Qt Designer não quebra o controller.
         Cada tela ganha o atalho global Ctrl+N conforme a posição no
-        _TELAS (Ctrl+1 = primeira, Ctrl+8 = última).
+        _TELAS (Ctrl+1 = primeira, Ctrl+9 = última).
         """
         self._telas = {}
         for indice, (chave, (nome_acao, titulo)) in enumerate(
@@ -275,6 +285,7 @@ class MainWindowController(QMainWindow):
             QTime(agora.hour, agora.minute, agora.second))
 
     # ---------------- saldo da conta (barra de status) ----------------
+
     def _iniciar_atualizacao_saldo(self):
         """Saldo na abertura + refresh periódico (cobre multiusuário)."""
         if not hasattr(self.ui, "txt_Saldo_Conta"):

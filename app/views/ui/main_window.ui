@@ -299,6 +299,7 @@ QFrame#frm_StatusBar QTimeEdit {
     </property>
     <addaction name="actionRecarga_Colaborador"/>
     <addaction name="actionDash_Refeicao"/>
+    <addaction name="actionRelAbastecimento"/>
    </widget>
    <addaction name="menuCadastros"/>
    <addaction name="menuLancamentos"/>
@@ -340,6 +341,11 @@ QFrame#frm_StatusBar QTimeEdit {
    </property>
   </action>
   <action name="actionAbastecimento">
+   <property name="text">
+    <string>Abastecimento</string>
+   </property>
+  </action>
+  <action name="actionRelAbastecimento">
    <property name="text">
     <string>Abastecimento</string>
    </property>
